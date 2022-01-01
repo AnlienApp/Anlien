@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_friend"
+        android:title="Friends"
+        android:icon="@drawable/ic_friend"/>
+    <item android:id="@+id/nav_home"
+        android:title="Home"
+        android:icon="@drawable/ic_event"/>
+    <item android:id="@+id/nav_option"
+        android:title="Option"
+        android:icon="@drawable/ic_perso" />
+</menu>

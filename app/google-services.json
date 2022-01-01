@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "741314423067",
+    "project_id": "anlien",
+    "storage_bucket": "anlien.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741314423067:android:07d03b5a07f5e90c8b0bbe",
+        "android_client_info": {
+          "package_name": "com.zitrouille.anlien"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "741314423067-hs41l1fk7g7sciebqm2js4hjn9qpakke.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zitrouille.anlien",
+            "certificate_hash": "fdcbf8d9a9e44b91a0b98681e55d48ce0eafe5bf"
+          }
+        },
+        {
+          "client_id": "741314423067-krjnj5nkgsckd9n12mmkdptsfplu7pgu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAI4sLMvKWBBQ4bdF_UJDWjc6N5K3975c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "741314423067-krjnj5nkgsckd9n12mmkdptsfplu7pgu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

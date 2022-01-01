@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Anlien</string>
+    <string name="my_activity">Mes activités</string>
+    <string name="create_activity">Créer une activité</string>
+    <string name="qr_code">qr_code</string>
+    <string name="chat">Discussion</string>
+    <string name="my_friends">Mes amis</string>
+    <string name="my_event">Mon évènnement</string>
+    <string name="my_options">Mon profil</string>
+    <string name="no_friend">Vous n\'avez pas encore d\'amis</string>
+    <string name="scan_friend_qr_code">Touchez pour scanner un QR code</string>
+    <string name="no_event">Aucun évènement n\'est à venir</string>
+    <string name="no_event_create_one">Touchez pour en créer un</string>
+    <string name="wait_invitation">Attendez que quelqu\'un vous invite</string>
+    <string name="or">Ou</string>
+    <string name="made_in_france">Made in France</string>
+    <string name="title">Anlien</string>
+</resources>
