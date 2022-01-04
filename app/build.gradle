@@ -11,7 +11,7 @@ android {
         applicationId "com.zitrouille.anlien"
         minSdk 21
         targetSdk 31
-        versionCode 5
+        versionCode 6
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -73,5 +73,8 @@ dependencies {
 
     // Circular image
     implementation 'de.hdodenhof:circleimageview:3.1.0'
+
+    // Refresh layout
+    implementation 'com.baoyz.pullrefreshlayout:library:1.2.0'
 
 }

@@ -4,19 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/wallpaperdog_17052018"
+    android:background="@color/background"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/title"
+    <ImageView
+        android:layout_width="285dp"
+        android:layout_height="136dp"
         android:layout_marginTop="100dp"
-        android:textColor="@color/white"
-        android:textSize="50sp"
-        android:alpha="0.7"
-        android:fontFamily="cursive"
-        android:textStyle="bold"
+        android:alpha="0.9"
+        android:src="@drawable/title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -46,11 +42,11 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
-        android:layout_width="31dp"
-        android:layout_height="11dp"
-        android:alpha="0.8"
+        android:layout_width="36dp"
+        android:layout_height="23dp"
         android:layout_marginTop="10dp"
-        android:src="@drawable/frenchflag"
+        android:alpha="0.8"
+        android:src="@drawable/image"
         app:layout_constraintEnd_toEndOf="@+id/textView"
         app:layout_constraintStart_toStartOf="@+id/textView"
         app:layout_constraintTop_toBottomOf="@+id/textView" />

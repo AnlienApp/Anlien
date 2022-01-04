@@ -1,10 +1,10 @@
 package com.zitrouille.anlien
 
-class HomepageEvent(iTitle: String) {
-    private var mTitle: String = iTitle
+class HomepageEvent(iEventId: String) {
+    private var mEventId: String = iEventId
 
-    fun getTitle() : String{
-        return mTitle
+    fun getEventId() : String{
+        return mEventId
     }
 
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/parentPanel"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -21,19 +22,56 @@
                 android:id="@+id/my_activity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
                 android:text="@string/my_activity"
                 android:textColor="@color/white"
-                android:layout_marginStart="20dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/add_friend"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/search_friend_layout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_qr_scanner"
+                android:layout_marginRight="10dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/add_friend"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/search_friend"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/ic_search"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/search_bar"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <EditText
+                    android:id="@+id/search_bar"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.8"
+                    android:background="@drawable/round_corner_small"
+                    android:padding="5dp"
+                    android:paddingStart="10dp"
+                    android:textSize="15sp"
+                    android:visibility="gone"
+                    android:textColor="@color/black"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="RtlSymmetry" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <ImageView
+                android:id="@+id/add_friend"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_qr_scanner"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -41,10 +79,10 @@
 
             <ImageView
                 android:id="@+id/create_event"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_add"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_add"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -60,14 +98,22 @@
         android:layout_weight="0.825"
         android:visibility="gone"
         android:id="@+id/eventPage">
-        <ListView
-            android:id="@+id/eventList"
+
+        <com.baoyz.widget.PullRefreshLayout
+            android:id="@+id/swipeRefreshListEvent"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:divider="@android:color/transparent"
-            android:dividerHeight="5.0sp"/>
+            android:layout_height="match_parent">
+
+            <ListView
+                android:id="@+id/eventList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="5.0sp"/>
+
+        </com.baoyz.widget.PullRefreshLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
@@ -167,14 +213,22 @@
         android:visibility="gone"
         android:id="@+id/friendPage">
 
-        <ListView
-            android:id="@+id/friendList"
+        <com.baoyz.widget.PullRefreshLayout
+            android:id="@+id/swipeRefreshListFriend"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:divider="@android:color/transparent"
-            android:dividerHeight="5.0sp" />
+            android:layout_height="match_parent">
+
+            <ListView
+                android:id="@+id/friendList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="5.0sp" />
+
+        </com.baoyz.widget.PullRefreshLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
@@ -233,6 +287,25 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/friendListSearchIssue"
+            android:visibility="gone"
+            android:layout_centerInParent="true">
+
+            <ImageView
+                android:id="@+id/unknow"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:src="@drawable/unknown"
+                android:alpha="0.6"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     </RelativeLayout>
     <!-- Friend list END -->
@@ -254,14 +327,14 @@
                 android:id="@+id/profile_picture"
                 android:layout_width="150dp"
                 android:layout_height="150dp"
-                android:background="@drawable/image"
+                android:background="@drawable/image1"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/userName"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:textAlignment="center"
@@ -273,11 +346,34 @@
                 app:layout_constraintTop_toBottomOf="@+id/profile_picture" />
 
             <ImageView
+                android:id="@+id/edit_displayed_name"
+                android:layout_width="19dp"
+                android:layout_height="21dp"
+                android:layout_marginStart="10dp"
+                android:src="@drawable/ic_baseline_edit_24"
+                app:layout_constraintBottom_toBottomOf="@+id/userName"
+                app:layout_constraintStart_toEndOf="@+id/userName"
+                app:layout_constraintTop_toTopOf="@+id/userName" />
+
+            <TextView
+                android:id="@+id/pseudo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:alpha="0.5"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/userName" />
+
+            <ImageView
                 android:id="@+id/qr_code"
                 android:layout_width="300dp"
                 android:layout_height="300dp"
-                android:alpha="0.9"
                 android:layout_centerHorizontal="true"
+                android:alpha="0.9"
                 android:clickable="false"
                 android:contentDescription="@string/qr_code"
                 android:src="@drawable/ic_launcher_foreground"

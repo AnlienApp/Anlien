@@ -1,8 +1,10 @@
 package com.zitrouille.anlien
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -30,9 +32,16 @@ import com.google.zxing.WriterException
 import com.zitrouille.anlien.databinding.ActivityHomepageBinding
 import java.io.ByteArrayOutputStream
 import android.provider.MediaStore
+import android.view.inputmethod.InputMethodManager
+import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import com.bumptech.glide.Glide
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
+import com.baoyz.widget.PullRefreshLayout
+import java.util.*
+import kotlin.collections.ArrayList
+
 
 class HomepageActivity : AppCompatActivity() {
 
@@ -41,6 +50,7 @@ class HomepageActivity : AppCompatActivity() {
     private var mFriendArrayList: ArrayList<HomepageFriend>? = null
 
     private var mQRCodeResultLauncher: ActivityResultLauncher<Intent>? = null
+    private var mCreateEventCallback: ActivityResultLauncher<Intent>? = null
 
     private var mAddFriendDialog: Dialog? = null
 
@@ -49,6 +59,9 @@ class HomepageActivity : AppCompatActivity() {
     private var mStorage: FirebaseStorage? = null
 
     private var mfriendListReceptionRunning = false
+    private var mEventListReceptionRunning = false
+
+    private var mDialog: Dialog? = null
 
     /**
      * Init different behaviors when user click on the bottom navigation menu
@@ -64,8 +77,10 @@ class HomepageActivity : AppCompatActivity() {
         mStorage = FirebaseStorage.getInstance()
 
         initializeBottomNavigation()
+        initializeSwipeRefresh() // For Event list and Friend list
 
         initializeQrCodeCallback() // Callback manager
+        initializeCreateEventCallback() // Callback manager
         initializeProfilePicture() // Personal profile picture
     }
 
@@ -83,6 +98,28 @@ class HomepageActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkCurrentUser()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        hideFriendSearchBar(false)
+    }
+
+    /**
+     * Used to initialized swipe refresh callback for friend list and event list.
+     */
+    private fun initializeSwipeRefresh() {
+        val eventListSwipe: PullRefreshLayout = findViewById(R.id.swipeRefreshListEvent)
+        eventListSwipe.setOnRefreshListener {
+            retrieveEventList()
+            eventListSwipe.setRefreshing(false)
+        }
+
+        val friendListSwipe: PullRefreshLayout = findViewById(R.id.swipeRefreshListFriend)
+        friendListSwipe.setOnRefreshListener {
+            retrieveFriendList()
+            friendListSwipe.setRefreshing(false)
+        }
     }
 
     /**
@@ -117,6 +154,12 @@ class HomepageActivity : AppCompatActivity() {
         if(null != mAuth!!.currentUser!!.photoUrl) {
             Glide.with(applicationContext).load(mAuth!!.currentUser!!.photoUrl)
                 .into(findViewById(R.id.profile_picture))
+        }
+    }
+
+    private fun initializeCreateEventCallback() {
+        mCreateEventCallback = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            retrieveEventList()
         }
     }
 
@@ -331,6 +374,10 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.add_friend).animate().alpha(1F).withEndAction {
                 findViewById<ImageView>(R.id.add_friend).visibility = View.VISIBLE
             }
+            findViewById<ConstraintLayout>(R.id.search_friend_layout).animate().alpha(1F).withEndAction {
+                findViewById<ConstraintLayout>(R.id.search_friend_layout).visibility = View.VISIBLE
+            }
+
         }
         else {
             findViewById<RelativeLayout>(R.id.friendPage).animate().alpha(0F).withEndAction {
@@ -339,7 +386,13 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.add_friend).animate().alpha(0F).withEndAction {
                 findViewById<ImageView>(R.id.add_friend).visibility = View.GONE
             }
+            findViewById<ConstraintLayout>(R.id.search_friend_layout).animate().alpha(0F).withEndAction {
+                findViewById<ConstraintLayout>(R.id.search_friend_layout).visibility = View.GONE
+
+            }
+
         }
+        hideFriendSearchBar(false)
     }
 
     private fun userpageVisibility(ibValue : Boolean) {
@@ -364,31 +417,13 @@ class HomepageActivity : AppCompatActivity() {
         }
 
         if(null == mEventArrayList) {
-            /*val titleList = arrayOf(
-                "Nouvel année",
-                "Anniversaire de Maude",
-                "Week end au ski",
-                "Restaurant entre potes",
-                "Anniversaire de Hugo",
-                "Accrobranche",
-            )*/
-
-            mEventArrayList = ArrayList()
-            /*for(ii in titleList.indices) {
-                val event = HomepageEvent(titleList[ii])
-                mEventArrayList!!.add(event)
-            }*/
-
-            if(0 == mEventArrayList!!.size) {
-                findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.VISIBLE
-                findViewById<ListView>(R.id.eventList).visibility = View.GONE
+            findViewById<ImageView>(R.id.create_event_reminder).setOnClickListener {
+                mCreateEventCallback!!.launch(Intent(this, CreateEventActivity::class.java))
             }
-            else {
-                findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.GONE
-                findViewById<ListView>(R.id.eventList).visibility = View.VISIBLE
-                mActivityMainBinding!!.eventList.isClickable = true
-                mActivityMainBinding!!.eventList.adapter = HomepageEventListAdapter(this, mEventArrayList!!)
+            findViewById<ImageView>(R.id.create_event).setOnClickListener {
+                mCreateEventCallback!!.launch(Intent(this, CreateEventActivity::class.java))
             }
+            retrieveEventList()
         }
     }
 
@@ -407,10 +442,146 @@ class HomepageActivity : AppCompatActivity() {
                 mQRCodeResultLauncher!!.launch(Intent(this, ScannerActivity::class.java))
             }
         }
-        retrieveFriendList()
 
+        val searchEditText =  findViewById<EditText>(R.id.search_bar)
+
+        findViewById<ImageView>(R.id.search_friend).setOnClickListener {
+            if(View.VISIBLE == findViewById<EditText>(R.id.search_bar).visibility) {
+                hideFriendSearchBar(true)
+            }
+            else {
+                displayFriendSearchBar()
+            }
+        }
+
+        searchEditText.addTextChangedListener {
+            var timer = Timer()
+            val delay: Long = 500 // Milliseconds
+            searchEditText.doAfterTextChanged {
+                timer.cancel()
+                timer = Timer()
+                timer.schedule(
+                    object : TimerTask() {
+                        override fun run() {
+                            val currentSearch = it.toString().uppercase(Locale.getDefault())
+                            mDatabase!!.collection("users").whereGreaterThanOrEqualTo("uniquePseudo",  currentSearch).whereLessThanOrEqualTo("uniquePseudo", currentSearch+"\uf8ff")
+                                .get().addOnSuccessListener { documents ->
+
+                                    // Clean operation
+                                    if(null != mFriendArrayList) {
+                                        mFriendArrayList!!.clear()
+                                        mActivityMainBinding!!.friendList.adapter = null
+                                        mFriendArrayList = ArrayList()
+                                    }
+
+                                    if(currentSearch.length >= 3) {
+                                        for (document in documents) {
+                                            if (null == document) continue
+                                            mFriendArrayList!!.add(
+                                                HomepageFriend(
+                                                    document["displayName"].toString(),
+                                                    document["uniquePseudo"].toString(),
+                                                    iPendingRequest = false,
+                                                    iShouldBeValid = false,
+                                                    iFriendId = document.id,
+                                                    ibFindFromSearch = true
+                                                )
+                                            )
+                                            mActivityMainBinding!!.friendList.adapter =
+                                                HomepageFriendListAdapter(
+                                                    this@HomepageActivity,
+                                                    mFriendArrayList!!
+                                                )
+                                            mActivityMainBinding!!.friendList.setOnItemClickListener { _, _, position, _ ->
+                                                mDatabase!!.collection("users").document(mFriendArrayList!![position].getFriendId()).get().addOnSuccessListener {
+                                                    var bIsYourSelf = false
+                                                    if(mAuth!!.currentUser!!.uid == mFriendArrayList!![position].getFriendId())
+                                                        bIsYourSelf = true
+                                                    var bCanBeAdded = true
+                                                    var bPending = true
+                                                    if(mFriendArrayList!![position].getAssociatedToFriendRequest()) {
+                                                        bCanBeAdded = false
+                                                        bPending = false
+                                                        if(mFriendArrayList!![position].getRequest()) {
+                                                            bCanBeAdded = false
+                                                            bPending = true
+                                                        }
+                                                    }
+
+                                                    if(mFriendArrayList!![position].getRequest()) {
+                                                        bCanBeAdded = false
+                                                        bPending = true
+                                                    }
+
+                                                    displayAddFriendDialog(document,
+                                                        ibCanBeAdded = bCanBeAdded,
+                                                        ibPending = bPending,
+                                                        ibYourSelf = bIsYourSelf
+                                                    )
+                                                }
+
+                                            }
+                                        }
+                                    }
+                                    if(documents.size() != 0) {
+                                        findViewById<ListView>(R.id.friendList).visibility = View.VISIBLE
+                                        findViewById<ConstraintLayout>(R.id.friendListEmpty).visibility = View.GONE
+                                        findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.GONE
+                                    }
+                                    else {
+                                        findViewById<ListView>(R.id.friendList).visibility = View.GONE
+                                        findViewById<ConstraintLayout>(R.id.friendListEmpty).visibility = View.GONE
+                                        findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.VISIBLE
+                                    }
+                                }
+                        }
+                    },
+                    delay
+                )
+            }
+        }
+        retrieveFriendList()
     }
 
+    private fun hideFriendSearchBar(ibUpdateFriendList: Boolean) {
+        val searchEditText =  findViewById<EditText>(R.id.search_bar)
+        searchEditText.animate().alpha(0.0f).withEndAction {
+            searchEditText.visibility = View.GONE
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
+            Glide.with(applicationContext).load(R.drawable.ic_search).into(findViewById(R.id.search_friend))
+            if(ibUpdateFriendList)
+                retrieveFriendList()
+        }
+
+        // Disable scroll update
+        val friendListSwipe: PullRefreshLayout = findViewById(R.id.swipeRefreshListFriend)
+        friendListSwipe.isEnabled = true
+
+        if(null != mActivityMainBinding)
+            mActivityMainBinding!!.friendList.onItemClickListener = null
+    }
+
+    private fun displayFriendSearchBar() {
+        val searchEditText =  findViewById<EditText>(R.id.search_bar)
+        searchEditText.visibility = View.VISIBLE
+        searchEditText.animate().alpha(0.9f)
+        searchEditText.requestFocus()
+        val imm: InputMethodManager =
+            getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(
+            searchEditText,
+            InputMethodManager.SHOW_IMPLICIT
+        )
+        Glide.with(applicationContext).load(R.drawable.ic_close).into(findViewById(R.id.search_friend))
+        searchEditText.setText("")
+
+        // Disable scroll update
+        val friendListSwipe: PullRefreshLayout = findViewById(R.id.swipeRefreshListFriend)
+        friendListSwipe.isEnabled = false
+    }
+
+    @SuppressLint("CutPasteId")
     private fun displayPersonnalProfilePage() {
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.my_options)
         homepageVisibility(false)
@@ -419,10 +590,41 @@ class HomepageActivity : AppCompatActivity() {
 
         val currentUser = mAuth!!.currentUser
         if(null != currentUser) {
-            findViewById<TextView>(R.id.userName).text = currentUser.displayName
-            findViewById<ImageView>(R.id.qr_code).setImageBitmap(generateQRCode(currentUser.uid))
-        }
+            mDatabase!!.collection("users").document(currentUser.uid).get().addOnSuccessListener { document ->
 
+                findViewById<TextView>(R.id.userName).text = document["displayName"].toString()
+                findViewById<TextView>(R.id.pseudo).text = document["uniquePseudo"].toString()
+                findViewById<ImageView>(R.id.qr_code).setImageBitmap(generateQRCode(currentUser.uid))
+
+                findViewById<ImageView>(R.id.edit_displayed_name).setOnClickListener {
+                    mDialog = Dialog(this)
+                    mDialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                    mDialog!!.setCancelable(false)
+                    mDialog!!.setCanceledOnTouchOutside(true)
+                    mDialog!!.setContentView(R.layout.dialog_main_edit_pseudo)
+                    mDialog!!.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+
+                    val nameEditText = mDialog!!.findViewById<EditText>(R.id.pseudo)
+                    val currentName = findViewById<TextView>(R.id.userName).text
+                    nameEditText.setText(currentName)
+                    val validName = mDialog!!.findViewById<ImageView>(R.id.valid)
+                    validName.setOnClickListener {
+                        if(nameEditText.text.toString().isNotEmpty()) {
+                            mDatabase!!.collection("users")
+                                .document(currentUser.uid)
+                                .update("displayName", nameEditText.text.toString())
+                                .addOnSuccessListener {
+                                    findViewById<TextView>(R.id.userName).text =
+                                        nameEditText.text.toString()
+                                    mDialog!!.dismiss()
+                                }
+                        }
+                    }
+                    mDialog!!.show()
+                }
+
+            }
+        }
         findViewById<ImageView>(R.id.profile_picture).setOnClickListener {
             // start picker to get image for cropping and then use the image in cropping activity
             CropImage.activity()
@@ -502,10 +704,12 @@ class HomepageActivity : AppCompatActivity() {
                     mfriendListReceptionRunning = false
                     findViewById<ListView>(R.id.friendList).visibility = View.GONE
                     findViewById<ConstraintLayout>(R.id.friendListEmpty).visibility = View.VISIBLE
+                    findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.GONE
                 }
                 else {
                     findViewById<ListView>(R.id.friendList).visibility = View.VISIBLE
                     findViewById<ConstraintLayout>(R.id.friendListEmpty).visibility = View.GONE
+                    findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.GONE
                 }
 
                 for(document in documents) {
@@ -540,9 +744,11 @@ class HomepageActivity : AppCompatActivity() {
                             // Create user to display in the list
                             mFriendArrayList!!.add(HomepageFriend(
                                 doc["displayName"].toString(),
+                                doc["uniquePseudo"].toString(),
                                 document["request"] as Boolean,
                                 bShouldBeValid,
-                                document["userId"].toString()
+                                document["userId"].toString(),
+                                false
                             ))
 
                             // Current document is the last one of the list, fill list with retrieve users
@@ -562,6 +768,48 @@ class HomepageActivity : AppCompatActivity() {
                 mfriendListReceptionRunning = false
                 findViewById<ListView>(R.id.friendList).visibility = View.GONE
                 findViewById<ImageView>(R.id.friendListEmpty).visibility = View.VISIBLE
+                findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.GONE
+            }
+    }
+
+    private fun retrieveEventList() {
+        if(mEventListReceptionRunning)
+            return
+        mEventListReceptionRunning = true
+        // At first clean the previous list if exists
+        mActivityMainBinding!!.eventList.adapter = null
+        if(null != mEventArrayList)
+            mEventArrayList!!.clear()
+
+        /**
+         * Retrieve all friends from the current user
+         */
+        mDatabase!!.collection("users")
+            .document(mAuth!!.currentUser!!.uid)
+            .collection("events")
+            .get().addOnSuccessListener { documents ->
+
+                if(0 == documents.size()) {
+                    mEventListReceptionRunning = false
+                    findViewById<ListView>(R.id.eventList).visibility = View.GONE
+                    findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.VISIBLE
+                }
+                else {
+                    mEventArrayList = ArrayList()
+                    for (doc in documents) {
+                        if (null == doc) continue
+                        mEventArrayList!!.add(HomepageEvent(doc["eventId"].toString()))
+                    }
+                    mActivityMainBinding!!.eventList.adapter =
+                        HomepageEventListAdapter(this, mEventArrayList!!)
+                    mEventListReceptionRunning = false
+                    findViewById<ListView>(R.id.eventList).visibility = View.VISIBLE
+                    findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.GONE
+                }
+            }.addOnFailureListener {
+                mEventListReceptionRunning = false
+                findViewById<ListView>(R.id.eventList).visibility = View.GONE
+                findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.VISIBLE
             }
     }
 

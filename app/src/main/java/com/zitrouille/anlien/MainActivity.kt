@@ -1,6 +1,8 @@
 package com.zitrouille.anlien
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Dialog
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -14,13 +16,23 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import android.content.ContentValues.TAG
 import android.util.Log
+import android.view.Window
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseUserMetadata
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.*
+import android.text.InputFilter
+import android.text.InputFilter.AllCaps
+
 
 /**
  * This activity is used to display the main screen of the application
@@ -33,6 +45,7 @@ private var mFirebaseAnalytics: FirebaseAnalytics? = null
 private var mAuth: FirebaseAuth? = null
 private var mGoogleSignInOptions: GoogleSignInOptions? = null
 private var mResultLauncher: ActivityResultLauncher<Intent>? = null
+private var mDialog: Dialog? = null
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,16 +128,114 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if(null != currentUser) {
             val userInformation = hashMapOf(
                 "displayName" to currentUser.displayName,
+                "uniquePseudo" to ""
             )
             val db = FirebaseFirestore.getInstance()
-            db.collection("users").document(currentUser.uid)
-                .set(userInformation)
-                .addOnSuccessListener {
-                    startActivity(Intent(this, HomepageActivity::class.java))
+
+            db.collection("users").document(currentUser.uid).get().addOnSuccessListener {
+                if(it.exists()) {
+                    if(it["uniquePseudo"] != "") {
+                        startActivity(Intent(this, HomepageActivity::class.java))
+                    }
+                    else {
+                        displayPseudoCreation()
+                    }
                 }
-                .addOnFailureListener { e ->
-                    Log.w(TAG, "Error adding document", e)
+                else {
+                    db.collection("users").document(currentUser.uid)
+                        .set(userInformation)
+                        .addOnSuccessListener {
+                            displayPseudoCreation()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error adding document", e)
+                        }
                 }
+            }
         }
+    }
+
+    @SuppressLint("CutPasteId")
+    private fun displayPseudoCreation() {
+        mDialog = Dialog(this)
+        mDialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        mDialog!!.setCancelable(false)
+        mDialog!!.setContentView(R.layout.dialog_main_create_pseudo)
+        mDialog!!.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+        mDialog!!.show()
+
+        val valid = mDialog!!.findViewById<ImageView>(R.id.valid)
+        val warning = mDialog!!.findViewById<ImageView>(R.id.warning)
+        val wrong = mDialog!!.findViewById<ImageView>(R.id.wrong)
+
+        val pseudoEditText = mDialog!!.findViewById(R.id.pseudo) as EditText
+        pseudoEditText.filters = arrayOf<InputFilter>(AllCaps())
+
+
+        // Check if the current pseudo is not yet in the database
+        val db = FirebaseFirestore.getInstance()
+        pseudoEditText.addTextChangedListener {
+            var timer = Timer()
+            val DELAY: Long = 500 // Milliseconds
+            pseudoEditText.doAfterTextChanged {
+                timer.cancel()
+                timer = Timer()
+                timer.schedule(
+                    object : TimerTask() {
+                        override fun run() {
+                            db.collection("users").whereEqualTo("uniquePseudo", it.toString())
+                                .get().addOnSuccessListener { documents ->
+                                if (documents.size() > 0) {
+                                    valid.animate().alpha(0F).withEndAction {
+                                        valid.visibility = View.GONE
+                                    }.start()
+                                    warning.animate().alpha(0F).withEndAction {
+                                        warning.visibility = View.INVISIBLE
+                                    }.start()
+                                    wrong.visibility = View.VISIBLE
+                                    wrong.animate().alpha(1F).rotation(wrong.rotation+360F).start()
+                                } else {
+                                    wrong.animate().alpha(0F).withEndAction {
+                                        wrong.visibility = View.GONE
+                                    }.start()
+                                    warning.animate().alpha(0F).withEndAction {
+                                        warning.visibility = View.INVISIBLE
+                                    }.start()
+                                    valid.visibility = View.VISIBLE
+                                    valid.animate().alpha(1F).rotation(valid.rotation+360F).start()
+                                }
+                            }.addOnFailureListener {
+                                wrong.animate().alpha(0F).withEndAction {
+                                    wrong.visibility = View.GONE
+                                }.start()
+                                valid.animate().alpha(0F).withEndAction {
+                                    valid.visibility = View.GONE
+                                }.start()
+                                warning.visibility = View.VISIBLE
+                                warning.animate().alpha(1F).rotation(warning.rotation+360F).start()
+                            }
+                        }
+                    },
+                    DELAY
+                )
+            }
+        }
+
+        valid.setOnClickListener {
+            val newText = pseudoEditText.text.toString()
+            val userId = mAuth!!.currentUser!!.uid
+            db.collection("users").document(userId).update("uniquePseudo", newText).addOnSuccessListener {
+                checkCurrentUser()
+            }
+        }
+
+        warning.setOnClickListener {
+            Toast.makeText(mDialog!!.context, "Saisissez un identifiant", Toast.LENGTH_LONG).show()
+        }
+
+        wrong.setOnClickListener {
+            Toast.makeText(mDialog!!.context, "Identifiant non disponible", Toast.LENGTH_LONG).show()
+        }
+
     }
 }

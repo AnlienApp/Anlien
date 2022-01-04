@@ -38,10 +38,19 @@ class ScannerActivity : AppCompatActivity() {
         requestForCamera()
     }
 
+    override fun onPause() {
+        mCodeScanner!!.releaseResources()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+    }
+
     private fun requestForCamera() {
         Dexter.withActivity(this)
             .withPermissions(
-                android.Manifest.permission.CAMERA
+                android.Manifest.permission.CAMERA,
             )
             .withListener(object : MultiplePermissionsListener {
                 override fun onPermissionsChecked(report: MultiplePermissionsReport?) {

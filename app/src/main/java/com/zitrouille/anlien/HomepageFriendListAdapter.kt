@@ -25,6 +25,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
         val inflater: LayoutInflater = LayoutInflater.from(iContext)
         val view: View = inflater.inflate(R.layout.item_homepage_friend, null)
         view.findViewById<TextView>(R.id.name).text = iArrayList[iPosition].getName()
+        view.findViewById<TextView>(R.id.identifiant).text = iArrayList[iPosition].getUniquePseudo()
 
         /**
          * Display profile picture if it exists
@@ -34,15 +35,65 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
             Glide.with(iContext).load(it).into(view.findViewById(R.id.profile_picture))
         }
 
+        val user: HomepageFriend = iArrayList[iPosition]
+
+        // If the profile has been retrieved from search
+        // check if friend request is already done or not.
+        if(iArrayList[iPosition].getFriendFromSearch()) {
+            val auth = FirebaseAuth.getInstance()
+            val database = FirebaseFirestore.getInstance()
+            database.collection("users")
+                .document(auth.currentUser!!.uid)
+                .collection("friends")
+                .whereEqualTo("userId", iArrayList[iPosition].getFriendId())
+                .get().addOnSuccessListener { documents ->
+                    if(0 == documents.size()) {
+                        initFromNotFriendquest(view)
+                    }
+                    else {
+                        for(document in documents) {
+                            user.setRequest(document["request"] as Boolean)
+                            if(2L == document["status"]) {
+                                user.setShouldBeValid(true)
+                            }
+                            if(0L != document["status"] || true == document["request"])
+                                user.setAssociatedToFriendRequest(true)
+                        }
+                        initFromFriendRequest(view, user, iPosition)
+                    }
+            }
+        }
+        else {
+            initFromFriendRequest(view, user, iPosition)
+        }
+        return view
+    }
+
+    /**
+     * User is not linked to a friend request
+     */
+    private fun initFromNotFriendquest(iView: View) {
+        iView.findViewById<ImageView>(R.id.more).visibility = View.GONE
+    }
+
+    /**
+     * The user is already linked to a friend request, we need to display the well
+     * panel with the right icon. Click is disabled on it
+     */
+    private fun initFromFriendRequest(iView: View, iUser: HomepageFriend, iPosition: Int) {
+
+        val bRequest = iUser.getRequest()
+        val bShouldBeValid = iUser.getShouldBeValid()
+
         /**
          * When user click on more menu, create popup window
          */
-        view.findViewById<ImageView>(R.id.more).setOnClickListener {
+        iView.findViewById<ImageView>(R.id.more).setOnClickListener {
             val popup = PopupMenu(context, it)
             popup.setOnMenuItemClickListener { it1 ->
-                when(it1.itemId) {
+                when (it1.itemId) {
                     R.id.delete -> {
-                        deleteFriend(view, iPosition)
+                        deleteFriend(iView, iPosition)
                     }
                 }
                 true
@@ -51,21 +102,20 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
             popup.show()
         }
 
-        if(iArrayList[iPosition].getRequest() && !iArrayList[iPosition].getShouldBeValid()) {
+        if (bRequest && !bShouldBeValid) {
             /**
              * Current user cannot valid the friend request
              */
-            view.findViewById<ImageView>(R.id.request).visibility = View.VISIBLE
-        }
-        else if(iArrayList[iPosition].getRequest() && iArrayList[iPosition].getShouldBeValid()) {
+            iView.findViewById<ImageView>(R.id.request).visibility = View.VISIBLE
+        } else if (bRequest && bShouldBeValid) {
             /**
              * Current user can valid the friend request
              */
-            view.findViewById<ImageView>(R.id.valid).visibility = View.VISIBLE
-            view.findViewById<ImageView>(R.id.cancel).visibility = View.VISIBLE
-            view.findViewById<ImageView>(R.id.more).visibility = View.GONE
+            iView.findViewById<ImageView>(R.id.valid).visibility = View.VISIBLE
+            iView.findViewById<ImageView>(R.id.cancel).visibility = View.VISIBLE
+            iView.findViewById<ImageView>(R.id.more).visibility = View.GONE
 
-            view.findViewById<ImageView>(R.id.valid).setOnClickListener {
+            iView.findViewById<ImageView>(R.id.valid).setOnClickListener {
                 val auth = FirebaseAuth.getInstance()
                 val database = FirebaseFirestore.getInstance()
 
@@ -83,9 +133,12 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                                 .collection("friends")
                                 .document(documents.documents[0].id)
                                 .update(information as Map<String, Any>).addOnSuccessListener {
-                                    view.findViewById<ImageView>(R.id.valid).visibility = View.GONE
-                                    view.findViewById<ImageView>(R.id.cancel).visibility = View.GONE
-                                    view.findViewById<ImageView>(R.id.more).visibility = View.VISIBLE
+                                    iView.findViewById<ImageView>(R.id.valid).visibility =
+                                        View.GONE
+                                    iView.findViewById<ImageView>(R.id.cancel).visibility =
+                                        View.GONE
+                                    iView.findViewById<ImageView>(R.id.more).visibility =
+                                        View.VISIBLE
                                 }
                         }
                     }
@@ -104,20 +157,20 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                                 .collection("friends")
                                 .document(documents.documents[0].id)
                                 .update(information as Map<String, Any>).addOnSuccessListener {
-                                    view.findViewById<ImageView>(R.id.valid).visibility = View.GONE
-                                    view.findViewById<ImageView>(R.id.cancel).visibility = View.GONE
-                                    view.findViewById<ImageView>(R.id.more).visibility = View.VISIBLE
+                                    iView.findViewById<ImageView>(R.id.valid).visibility =
+                                        View.GONE
+                                    iView.findViewById<ImageView>(R.id.cancel).visibility =
+                                        View.GONE
+                                    iView.findViewById<ImageView>(R.id.more).visibility =
+                                        View.VISIBLE
                                 }
                         }
                     }
             }
-
-            view.findViewById<ImageView>(R.id.cancel).setOnClickListener {
-                deleteFriend(view, iPosition)
+            iView.findViewById<ImageView>(R.id.cancel).setOnClickListener {
+                deleteFriend(iView, iPosition)
             }
-
         }
-        return view
     }
 
     private fun deleteFriend(iView: View, iPosition: Int) {

@@ -21,8 +21,7 @@ class EventActivity : AppCompatActivity() {
          */
         val backView: View = bottomMenu.findViewById(R.id.nav_back)
         backView.setOnClickListener {
-            val intent = Intent(this, HomepageActivity::class.java)
-            startActivity(intent)
+            finish()
         }
     }
 }

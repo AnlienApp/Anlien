@@ -17,6 +17,7 @@ import androidmads.library.qrgenearator.QRGContents
 import androidmads.library.qrgenearator.QRGEncoder
 import android.util.Log
 import android.view.*
+import com.google.firebase.firestore.FirebaseFirestore
 
 class HomepageEventListAdapter(private val iContext : Activity, private val iArrayList: ArrayList<HomepageEvent>):
     ArrayAdapter<HomepageEvent>(iContext, R.layout.item_homepage_event, iArrayList) {
@@ -29,35 +30,42 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
         val inflater: LayoutInflater = LayoutInflater.from(iContext)
         val view: View = inflater.inflate(R.layout.item_homepage_event, null)
 
-        val sTitle = iArrayList[iPosition].getTitle()
+        val eventId = iArrayList[iPosition].getEventId()
+        FirebaseFirestore.getInstance().collection("events")
+            .document(eventId).get().addOnSuccessListener { it ->
+                view.findViewById<TextView>(R.id.title).text  = it["title"].toString()
+                view.findViewById<TextView>(R.id.date).text  = it["date"].toString()
 
-        view.findViewById<TextView>(R.id.title).text = sTitle
+                FirebaseFirestore.getInstance().collection("events")
+                      .document(eventId).collection("participants").get().addOnSuccessListener { participants ->
+                        mEventProfileArrayList = null
+                        mEventProfileArrayList = ArrayList()
+                        mEventProfileArrayList!!.add(HomepageEventProfile(it["organizerId"].toString())) // Organizer
+                        if(participants.size() != 0) {
+                            for (ii in 0 until participants.size()) {
+                                val participant = participants.documents[ii] ?: continue
+                                val eventProfile = HomepageEventProfile(participant["userId"].toString()) // User
+                                if (ii in 4 until participants.size()) {
+                                    eventProfile.setRemainingProfile(participants.size() - ii)
+                                    mEventProfileArrayList!!.add(eventProfile)
+                                    break
+                                } else {
+                                    mEventProfileArrayList!!.add(eventProfile)
+                                }
+                            }
+                        }
 
-        /**
-         * Initialize list of profile picture displayed on an event
-         */
-        val nbElement = Random().nextInt(10)
-        mEventProfileArrayList = ArrayList()
-        for (ii in 0..nbElement) {
-            val eventProfile = HomepageEventProfile()
-            if(ii in 4 until nbElement) {
-                eventProfile.setRemainingProfile(nbElement-ii)
-                mEventProfileArrayList!!.add(eventProfile)
-                break
+                        initFlipAnimation(view)
+                        view.findViewById<ImageView>(R.id.back_layout).setImageBitmap(generateQRCode(eventId))
+
+                        view.setOnClickListener {
+                            val intent = Intent(view.context.applicationContext, EventActivity::class.java)
+                            intent.putExtra("EventId", eventId)
+                            view.context.startActivity(intent)
+                        }
+                      }
             }
-            else {
-                mEventProfileArrayList!!.add(eventProfile)
-            }
-        }
 
-        initFlipAnimation(view)
-        view.findViewById<ImageView>(R.id.back_layout).setImageBitmap(generateQRCode(sTitle))
-
-        view.setOnClickListener {
-            val intent = Intent(view.context.applicationContext, EventActivity::class.java)
-            intent.putExtra("Title", sTitle)
-            view.context.startActivity(intent)
-        }
 
         return view
     }

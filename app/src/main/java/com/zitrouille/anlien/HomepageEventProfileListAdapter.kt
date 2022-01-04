@@ -7,6 +7,9 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 
 class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEventProfile>) :
     RecyclerView.Adapter<HomepageEventProfileListAdapter.ViewHolder>() {
@@ -40,6 +43,16 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
         }
         else {
             viewHolder.remainingProfileTextView.visibility = View.GONE
+            viewHolder.profilePictureImageView.visibility = View.VISIBLE
+
+            val userId = dataSet[position].getUserId()
+            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                .child("profileImages")
+                .child("$userId.jpeg")
+            storageRef.downloadUrl.addOnSuccessListener {
+                Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePictureImageView)
+            }
+
         }
     }
 

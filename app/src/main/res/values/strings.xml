@@ -8,11 +8,20 @@
     <string name="my_event">Mon évènnement</string>
     <string name="my_options">Mon profil</string>
     <string name="no_friend">Vous n\'avez pas encore d\'amis</string>
-    <string name="scan_friend_qr_code">Touchez pour scanner un QR code</string>
+    <string name="scan_friend_qr_code">Toucher pour scanner un QR code</string>
     <string name="no_event">Aucun évènement n\'est à venir</string>
-    <string name="no_event_create_one">Touchez pour en créer un</string>
+    <string name="no_event_create_one">Toucher pour en créer un</string>
     <string name="wait_invitation">Attendez que quelqu\'un vous invite</string>
     <string name="or">Ou</string>
-    <string name="made_in_france">Made in France</string>
+    <string name="made_in_france">Fabriquée en France</string>
     <string name="title">Anlien</string>
+    <string name="enter_public_name">Entrez votre nom public</string>
+    <string name="friend_search_issue">Oups! Personne ne personne n\'a été trouvé</string>
+    <string name="new_event_name">Nom de l\'évènement</string>
+    <string name="choose_date">Selectionner une date</string>
+    <string name="event_address">Adresse de l\'évènement</string>
+    <string name="participants">Participants:</string>
+    <string name="validate">Valider</string>
+    <string name="error_name_or_address">Erreur dans le nom ou l\'adresse</string>
+    <string name="creation_failed">La création a échouée</string>
 </resources>
