@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="?android:colorPrimary"
     tools:context=".MainActivity">
 
     <ImageView
@@ -35,7 +35,7 @@
         android:layout_marginBottom="50dp"
         android:alpha="0.5"
         android:text="@string/made_in_france"
-        android:textColor="@color/white"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

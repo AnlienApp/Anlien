@@ -12,6 +12,7 @@ import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
 
 class CreateEventFriendListAdapter(private val dataSet: ArrayList<CreateEventFriend>) :
     RecyclerView.Adapter<CreateEventFriendListAdapter.ViewHolder>() {
@@ -43,17 +44,36 @@ class CreateEventFriendListAdapter(private val dataSet: ArrayList<CreateEventFri
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         val userId = dataSet[position].getUserId()
-        FirebaseFirestore.getInstance().collection("users")
-            .document(userId).get().addOnSuccessListener { it ->
-                viewHolder.displayNameTextView.text = it["displayName"].toString()
-                viewHolder.uniqueIdentifiantTextView.text = it["uniquePseudo"].toString()
-                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                    .child("profileImages")
-                    .child("$userId.jpeg")
-                storageRef.downloadUrl.addOnSuccessListener {
-                    Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePicture)
-                }
+
+        if(globalUserInformations.containsKey(userId)) {
+            viewHolder.displayNameTextView.text = globalUserInformations[userId]!!.mDisplayName
+            viewHolder.uniqueIdentifiantTextView.text = globalUserInformations[userId]!!.mUniqueId
+            if(null != globalUserInformations[userId]!!.mUri) {
+                Glide.with(viewHolder.itemView.context).load(globalUserInformations[userId]!!.mUri)
+                    .into(viewHolder.profilePicture)
             }
+        }
+        else {
+            // FIREBASE - FIRESTORE | FIRESTORAGE
+            val newUserRetrieved = MainActivity.Companion.UserInformation()
+            FirebaseFirestore.getInstance().collection("users")
+                .document(userId).get().addOnSuccessListener { it ->
+                    newUserRetrieved.mDisplayName = it["displayName"].toString()
+                    newUserRetrieved.mUniqueId = it["uniquePseudo"].toString()
+                    viewHolder.displayNameTextView.text = newUserRetrieved.mDisplayName
+                    viewHolder.uniqueIdentifiantTextView.text = newUserRetrieved.mUniqueId
+
+                    val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                        .child("profileImages")
+                        .child("$userId.jpeg")
+                    storageRef.downloadUrl.addOnSuccessListener {
+                        Glide.with(viewHolder.itemView.context).load(it)
+                            .into(viewHolder.profilePicture)
+                        newUserRetrieved.mUri = it
+                    }
+                }
+            globalUserInformations[userId] = newUserRetrieved
+        }
 
         viewHolder.mainLayout.setOnClickListener {
             if(!viewHolder.animationIsRunning)

@@ -2,8 +2,8 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
+import android.app.AlertDialog
+import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import kotlin.collections.ArrayList
@@ -11,10 +11,12 @@ import android.view.*
 import android.widget.ImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import android.widget.PopupMenu
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
-import java.io.ByteArrayOutputStream
+import android.content.DialogInterface
+
+
+
 
 
 class HomepageFriendListAdapter(private val iContext : Activity, private val iArrayList: ArrayList<HomepageFriend>):
@@ -30,13 +32,21 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
         /**
          * Display profile picture if it exists
          */
-        val profilePictureRef = FirebaseStorage.getInstance().reference.child("profileImages/"+iArrayList[iPosition].getFriendId()+".jpeg")
-        profilePictureRef.downloadUrl.addOnSuccessListener {
-            Glide.with(iContext).load(it).into(view.findViewById(R.id.profile_picture))
+        if(globalUserInformations.containsKey(iArrayList[iPosition].getFriendId()) && null != globalUserInformations[iArrayList[iPosition].getFriendId()]!!.mUri) {
+            Glide.with(iContext).load(globalUserInformations[iArrayList[iPosition].getFriendId()]!!.mUri).into(view.findViewById(R.id.profile_picture))
+        }
+        else {
+            val profilePictureRef =
+                FirebaseStorage.getInstance().reference.child("profileImages/" + iArrayList[iPosition].getFriendId() + ".jpeg")
+            profilePictureRef.downloadUrl.addOnSuccessListener {
+                Glide.with(iContext).load(it).into(view.findViewById(R.id.profile_picture))
+                if(globalUserInformations.containsKey(iArrayList[iPosition].getFriendId())) {
+                    globalUserInformations[iArrayList[iPosition].getFriendId()]!!.mUri = it
+                }
+            }
         }
 
         val user: HomepageFriend = iArrayList[iPosition]
-
         // If the profile has been retrieved from search
         // check if friend request is already done or not.
         if(iArrayList[iPosition].getFriendFromSearch()) {
@@ -73,7 +83,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
      * User is not linked to a friend request
      */
     private fun initFromNotFriendquest(iView: View) {
-        iView.findViewById<ImageView>(R.id.more).visibility = View.GONE
+        iView.findViewById<ImageView>(R.id.delete).visibility = View.GONE
     }
 
     /**
@@ -88,18 +98,21 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
         /**
          * When user click on more menu, create popup window
          */
-        iView.findViewById<ImageView>(R.id.more).setOnClickListener {
-            val popup = PopupMenu(context, it)
-            popup.setOnMenuItemClickListener { it1 ->
-                when (it1.itemId) {
-                    R.id.delete -> {
-                        deleteFriend(iView, iPosition)
-                    }
-                }
-                true
+        iView.findViewById<ImageView>(R.id.delete).setOnClickListener {
+
+            val builder: AlertDialog.Builder = AlertDialog.Builder(iView.context)
+
+            builder.setTitle("Supprimer")
+            builder.setMessage(context.getString(R.string.are_you_sure))
+
+            builder.setPositiveButton(
+                context.getString(R.string.yes)
+            ) { dialog, _ -> // Do nothing but close the dialog
+                dialog.dismiss()
+                deleteFriend(iView, iPosition)
             }
-            popup.menuInflater.inflate(R.menu.homepage_friend_more_menu, popup.menu)
-            popup.show()
+
+            builder.create().show()
         }
 
         if (bRequest && !bShouldBeValid) {
@@ -113,7 +126,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
              */
             iView.findViewById<ImageView>(R.id.valid).visibility = View.VISIBLE
             iView.findViewById<ImageView>(R.id.cancel).visibility = View.VISIBLE
-            iView.findViewById<ImageView>(R.id.more).visibility = View.GONE
+            iView.findViewById<ImageView>(R.id.delete).visibility = View.GONE
 
             iView.findViewById<ImageView>(R.id.valid).setOnClickListener {
                 val auth = FirebaseAuth.getInstance()
@@ -137,7 +150,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                                         View.GONE
                                     iView.findViewById<ImageView>(R.id.cancel).visibility =
                                         View.GONE
-                                    iView.findViewById<ImageView>(R.id.more).visibility =
+                                    iView.findViewById<ImageView>(R.id.delete).visibility =
                                         View.VISIBLE
                                 }
                         }
@@ -161,7 +174,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                                         View.GONE
                                     iView.findViewById<ImageView>(R.id.cancel).visibility =
                                         View.GONE
-                                    iView.findViewById<ImageView>(R.id.more).visibility =
+                                    iView.findViewById<ImageView>(R.id.delete).visibility =
                                         View.VISIBLE
                                 }
                         }

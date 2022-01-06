@@ -6,5 +6,4 @@ class HomepageEvent(iEventId: String) {
     fun getEventId() : String{
         return mEventId
     }
-
 }

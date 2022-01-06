@@ -5,7 +5,7 @@ xmlns:app="http://schemas.android.com/apk/res-auto"
 android:id="@+id/main_layout"
 android:layout_width="200dp"
 android:layout_height="300dp"
-android:background="@drawable/round_corner_dark">
+android:background="@drawable/round_corner">
 
 
 <de.hdodenhof.circleimageview.CircleImageView
@@ -14,6 +14,7 @@ android:background="@drawable/round_corner_dark">
     android:layout_height="wrap_content"
     android:layout_marginTop="20dp"
     android:background="@drawable/image1"
+    app:tint="?android:attr/textColorPrimary"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent" />
@@ -24,7 +25,7 @@ android:background="@drawable/round_corner_dark">
     android:layout_height="wrap_content"
     android:layout_marginTop="20dp"
     android:textAlignment="center"
-    android:textColor="@color/white"
+    android:textColor="?android:attr/textColorPrimary"
     android:textSize="20sp"
     android:textStyle="bold"
     app:layout_constraintEnd_toEndOf="@+id/profile_picture"
@@ -39,7 +40,7 @@ android:background="@drawable/round_corner_dark">
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/user_name"
-    app:srcCompat="@drawable/add" />
+    app:srcCompat="@drawable/ic_circle_add" />
 
 <ImageView
     android:id="@+id/friend_added"
@@ -50,7 +51,7 @@ android:background="@drawable/round_corner_dark">
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/user_name"
-    app:srcCompat="@drawable/check" />
+    app:srcCompat="@drawable/checked" />
 
 <ImageView
     android:id="@+id/friend_pending"
@@ -61,7 +62,7 @@ android:background="@drawable/round_corner_dark">
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/user_name"
-    app:srcCompat="@drawable/clockwise" />
+    app:srcCompat="@drawable/question" />
 
 <ImageView
     android:id="@+id/yourself"

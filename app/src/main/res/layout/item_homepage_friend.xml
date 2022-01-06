@@ -6,7 +6,9 @@
     android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/round_corner_dark"
+    android:layout_marginStart="5dp"
+    android:layout_marginEnd="5dp"
+    android:background="@drawable/round_corner"
     android:padding="5dp">
 
     <de.hdodenhof.circleimageview.CircleImageView
@@ -16,6 +18,7 @@
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
         android:background="@drawable/image1"
+        app:tint="?android:attr/textColorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -25,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_marginStart="15dp"
-        android:textColor="@color/white"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintStart_toEndOf="@+id/profile_picture"
@@ -36,7 +39,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:alpha="0.5"
-        android:textColor="@color/white"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="12sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/profile_picture"
@@ -49,7 +52,7 @@
         android:layout_width="39dp"
         android:layout_height="34dp"
         android:layout_marginEnd="20dp"
-        android:src="@drawable/valid"
+        android:src="@drawable/checked"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/cancel"
@@ -63,7 +66,7 @@
         android:src="@drawable/cancel"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/more"
+        app:layout_constraintEnd_toStartOf="@+id/delete"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
@@ -72,16 +75,18 @@
         android:layout_height="34dp"
         android:visibility="gone"
         android:layout_marginEnd="10dp"
-        android:src="@drawable/clockwise"
+        android:src="@drawable/question"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/more"
+        app:layout_constraintEnd_toStartOf="@+id/delete"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
-        android:id="@+id/more"
+        android:id="@+id/delete"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_more"
+        android:src="@drawable/ic_delete"
+        android:alpha="0.7"
+        app:tint="?android:attr/textColorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

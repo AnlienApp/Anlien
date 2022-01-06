@@ -6,7 +6,7 @@
     android:id="@+id/main_layout"
     android:layout_width="250dp"
     android:layout_height="300dp"
-    android:background="@drawable/round_corner_dark">
+    android:background="@drawable/round_corner">
 
     <ImageView
         android:id="@+id/imageView"
@@ -22,9 +22,11 @@
         android:id="@+id/pseudo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Entrez un identifiant"
+        android:hint="@string/enter_identifiant"
         android:inputType="textVisiblePassword"
         android:background="@drawable/round_corner_small"
+        android:backgroundTint="?android:attr/textColorSecondary"
+        android:textColor="?android:attr/textColorPrimary"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingTop="15dp"

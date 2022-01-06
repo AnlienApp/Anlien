@@ -15,6 +15,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import android.content.ContentValues.TAG
+import android.net.Uri
 import android.util.Log
 import android.view.Window
 import android.widget.EditText
@@ -32,6 +33,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 import android.text.InputFilter
 import android.text.InputFilter.AllCaps
+import kotlin.collections.HashMap
 
 
 /**
@@ -48,6 +50,20 @@ private var mResultLauncher: ActivityResultLauncher<Intent>? = null
 private var mDialog: Dialog? = null
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
+
+    /**
+     * Contains a cache list of all users already retrieved.
+     */
+    companion object {
+        var globalUserInformations = HashMap<String, UserInformation>()
+
+        class UserInformation {
+            var mDisplayName = ""
+            var mUniqueId = ""
+            var mUri: Uri? = null
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/nav_back"
-        android:title="Back"
-        android:icon="@drawable/ic_back" />
     <item android:id="@+id/nav_info"
         android:title="Info"
         android:icon="@drawable/ic_info" />
+    <item android:id="@+id/nav_participant"
+        android:title="Participants"
+        android:icon="@drawable/ic_friend" />
+    <item android:id="@+id/nav_shopping"
+        android:title="Courses"
+        android:icon="@drawable/ic_shopping" />
+    <item android:id="@+id/nav_pot"
+        android:title="Cagnotte"
+        android:icon="@drawable/ic_money" />
     <item android:id="@+id/nav_chat"
         android:title="Chat"
         android:icon="@drawable/ic_chat" />

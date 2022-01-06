@@ -1,6 +1,7 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,8 +9,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
 
 class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEventProfile>) :
     RecyclerView.Adapter<HomepageEventProfileListAdapter.ViewHolder>() {
@@ -46,11 +49,41 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
             viewHolder.profilePictureImageView.visibility = View.VISIBLE
 
             val userId = dataSet[position].getUserId()
-            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                .child("profileImages")
-                .child("$userId.jpeg")
-            storageRef.downloadUrl.addOnSuccessListener {
-                Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePictureImageView)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if(globalUserInformations.containsKey(userId)) {
+                    viewHolder.profilePictureImageView.tooltipText = globalUserInformations[userId]!!.mDisplayName
+                }
+                else {
+                    // FIREBASE - FIRESTORE
+                    val newUserRetrieved = MainActivity.Companion.UserInformation()
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(userId).get().addOnSuccessListener { userDocument ->
+                            newUserRetrieved.mDisplayName =  userDocument["displayName"].toString()
+                            newUserRetrieved.mUniqueId =  userDocument["uniquePseudo"].toString()
+                            viewHolder.profilePictureImageView.tooltipText = newUserRetrieved.mDisplayName
+                            globalUserInformations[userId] = newUserRetrieved
+                        }
+                }
+            }
+
+            // FIREBASE - FIRESTORAGE
+            if(globalUserInformations.containsKey(userId) && null != globalUserInformations[userId]!!.mUri) {
+                Glide.with(viewHolder.itemView.context).load(globalUserInformations[userId]!!.mUri)
+                    .into(viewHolder.profilePictureImageView)
+            }
+            else {
+                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                    .child("profileImages")
+                    .child("$userId.jpeg")
+                storageRef.downloadUrl.addOnSuccessListener {
+                    Glide.with(viewHolder.itemView.context).load(it)
+                        .into(viewHolder.profilePictureImageView)
+                    if(globalUserInformations.containsKey(userId)) {
+                        globalUserInformations[userId]!!.mUri = it
+                    }
+                }
             }
 
         }

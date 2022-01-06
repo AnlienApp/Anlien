@@ -6,7 +6,7 @@
     android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/round_corner_dark"
+    android:background="@drawable/round_corner"
     android:padding="5dp">
 
     <de.hdodenhof.circleimageview.CircleImageView
@@ -16,6 +16,7 @@
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
         android:background="@drawable/image1"
+        app:tint="?android:attr/textColorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -25,8 +26,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_marginStart="15dp"
-        android:textColor="@color/white"
-        android:text="Hugo Andreu"
+        android:textColor="?android:textColorPrimary"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintStart_toEndOf="@+id/profile_picture"
@@ -37,22 +37,24 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:alpha="0.5"
-        android:text="ZITROUILLE"
-        android:textColor="@color/white"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="10sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/profile_picture"
         app:layout_constraintStart_toStartOf="@+id/name"
-        app:layout_constraintTop_toBottomOf="@+id/name" />
+        app:layout_constraintTop_toBottomOf="@+id/name"
+        tools:ignore="SmallSp" />
 
     <ImageView
         android:id="@+id/add_participant"
         android:layout_width="50dp"
         android:layout_height="40dp"
         android:src="@drawable/ic_circle_add"
+        app:tint="?android:attr/textColorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+         />
 
     <ImageView
         android:id="@+id/remove_participant"
@@ -61,7 +63,7 @@
         android:layout_marginRight="5dp"
         android:alpha="0"
         android:visibility="gone"
-        android:src="@drawable/valid"
+        android:src="@drawable/checked"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#2a3d43"
+    android:background="?android:colorPrimary"
     android:weightSum="1">
 
     <RelativeLayout
@@ -14,27 +14,565 @@
         android:layout_height="0dp"
         android:layout_weight="0.06" >
 
-        <TextView
-            android:id="@+id/my_activity"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:layout_marginLeft="20dp"
-            android:text="@string/chat"
-            android:textColor="@color/white"/>
+            android:layout_height="match_parent"
+            android:layout_marginLeft="15dp">
+
+            <ImageView
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_back"
+                app:tint="?android:attr/textColorPrimary"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/my_activity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="15dp"
+                android:text="@string/chat"
+                android:textColor="?android:attr/textColorPrimary"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/back"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/add_button"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_add"
+                app:tint="?android:attr/textColorPrimary"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/manage_participant"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="20dp"
+                app:tint="?android:attr/textColorPrimary"
+                android:src="@drawable/ic_manage"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     </RelativeLayout>
 
+    <!-- Information START -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.825" >
+        android:layout_weight="0.825"
+        android:id="@+id/informationPage">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/event_information"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <EditText
+                    android:id="@+id/title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    android:background="@drawable/round_corner_small"
+                    android:gravity="center"
+                    android:hint="@string/new_event_name"
+                    android:inputType="textVisiblePassword|textNoSuggestions"
+                    android:lines="1"
+                    android:maxLines="1"
+                    android:padding="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:backgroundTint="?android:attr/textColorSecondary"
+                    android:textSize="20sp"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="15"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/date"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    android:background="@drawable/round_corner_small"
+                    android:gravity="center"
+                    android:padding="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:backgroundTint="?android:attr/textColorSecondary"
+                    android:textSize="20sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/title" />
+
+                <TextView
+                    android:id="@+id/hour"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    android:background="@drawable/round_corner_small"
+                    android:gravity="center"
+                    android:padding="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:backgroundTint="?android:attr/textColorSecondary"
+                    android:textSize="20sp"
+                    app:layout_constraintEnd_toEndOf="@+id/date"
+                    app:layout_constraintStart_toStartOf="@+id/date"
+                    app:layout_constraintTop_toBottomOf="@+id/date" />
+
+                <EditText
+                    android:id="@+id/address"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    android:background="@drawable/round_corner_small"
+                    android:gravity="center"
+                    android:hint="@string/event_address"
+                    android:inputType="textVisiblePassword|textNoSuggestions"
+                    android:padding="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:backgroundTint="?android:attr/textColorSecondary"
+                    android:textSize="20sp"
+                    app:layout_constraintTop_toBottomOf="@+id/hour"
+                    tools:layout_editor_absoluteX="15dp" />
+
+                <EditText
+                    android:id="@+id/description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    android:background="@drawable/round_corner_small"
+                    android:gravity="top|left"
+                    android:hint="@string/description"
+                    android:inputType="textVisiblePassword|textNoSuggestions"
+                    android:maxLines="5"
+                    android:minHeight="150dp"
+                    android:padding="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:backgroundTint="?android:attr/textColorSecondary"
+                    android:textSize="20sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/address" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/presenceLayout"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"
+                    app:layout_constraintBottom_toTopOf="@+id/textView3"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="15dp"
+                    android:text="@string/present"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@+id/constraintLayout3"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/constraintLayout3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:visibility="gone"
+                        android:id="@+id/user_menu">
+
+                        <ImageView
+                            android:id="@+id/presentButton"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:alpha="0.3"
+                            android:src="@drawable/checked"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <ImageView
+                            android:id="@+id/questionButton"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:alpha="0.8"
+                            android:src="@drawable/question"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toStartOf="@+id/cancelButton"
+                            app:layout_constraintStart_toEndOf="@+id/presentButton"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <ImageView
+                            android:id="@+id/cancelButton"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:alpha="0.3"
+                            android:src="@drawable/cancel"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:id="@+id/organizer_menu"
+                        >
+
+                        <ImageView
+                            android:id="@+id/update_button"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:alpha="0.8"
+                            android:src="@drawable/update_event"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toStartOf="@+id/lock_unlock"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <ImageView
+                            android:id="@+id/lock_unlock"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:src="@drawable/unlock"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <ImageView
+                            android:id="@+id/delete_button"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:alpha="0.8"
+                            android:src="@drawable/delete_event"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@+id/lock_unlock"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View
+                    android:id="@+id/view"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    tools:layout_editor_absoluteX="20dp" />
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </RelativeLayout>
+    <!-- Information END -->
+
+    <!-- Participant list START -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.825"
+        android:visibility="gone"
+        android:id="@+id/participantPage">
+
+        <com.baoyz.widget.PullRefreshLayout
+            android:id="@+id/swipeRefreshListParticipant"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/participant_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="5.0sp" />
+
+        </com.baoyz.widget.PullRefreshLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/participantListEmpty"
+            android:visibility="gone"
+            android:layout_centerInParent="true">
+
+            <ImageView
+                android:id="@+id/people"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:src="@drawable/people"
+                android:alpha="0.5"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/empty_people_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.5"
+                android:layout_marginTop="15dp"
+                android:text="@string/alone_in_event"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@+id/participantListEmpty"
+                app:layout_constraintStart_toStartOf="@+id/participantListEmpty"
+                app:layout_constraintTop_toBottomOf="@+id/people" />
+
+            <TextView
+                android:id="@+id/add_item_people_list_reminder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/touch_to_add_friend"
+                android:alpha="0.5"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@+id/empty_people_list"
+                app:layout_constraintStart_toStartOf="@+id/empty_people_list"
+                app:layout_constraintTop_toBottomOf="@+id/empty_people_list" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </RelativeLayout>
+    <!-- Participant list End -->
+
+    <!-- Shopping list START -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.825"
+        android:visibility="gone"
+        android:id="@+id/shoppingPage">
+
+        <com.baoyz.widget.PullRefreshLayout
+            android:id="@+id/swipeRefreshListShopping"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/shopping_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="5.0sp" />
+
+        </com.baoyz.widget.PullRefreshLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/shoppingListEmpty"
+            android:visibility="gone"
+            android:layout_centerInParent="true">
+
+            <ImageView
+                android:id="@+id/alone"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:src="@drawable/panier__1_"
+                android:alpha="0.5"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/empty_shopping_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.5"
+                android:layout_marginTop="15dp"
+                android:text="@string/shopping_list_empty"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@+id/shoppingListEmpty"
+                app:layout_constraintStart_toStartOf="@+id/shoppingListEmpty"
+                app:layout_constraintTop_toBottomOf="@+id/alone" />
+
+            <TextView
+                android:id="@+id/add_item_shopping_list_reminder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/click_to_add_item"
+                android:alpha="0.5"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@+id/empty_shopping_list"
+                app:layout_constraintStart_toStartOf="@+id/empty_shopping_list"
+                app:layout_constraintTop_toBottomOf="@+id/empty_shopping_list" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </RelativeLayout>
+    <!-- Shopping list End -->
+
+
+    <!-- Pot START -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.825"
+        android:visibility="gone"
+        android:id="@+id/potPage">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/potEmpty"
+            android:visibility="gone"
+            android:layout_centerInParent="true">
+
+            <ImageView
+                android:id="@+id/pot_icon"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:src="@drawable/pas_dargent"
+                android:alpha="0.5"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/no_pot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.5"
+                android:layout_marginTop="15dp"
+                android:text="@string/no_pot"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@+id/potEmpty"
+                app:layout_constraintStart_toStartOf="@+id/potEmpty"
+                app:layout_constraintTop_toBottomOf="@+id/pot_icon" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </RelativeLayout>
+    <!-- Pot End -->
+
+
+    <!-- Chat START -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.940"
+        android:paddingTop="10dp"
+        android:visibility="gone"
+        android:id="@+id/chatPage">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/message_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/message_input"
+            android:padding="5dp" />
+
+        <EditText
+            android:id="@+id/message_input"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="70dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
+            android:inputType="textMultiLine"
+            android:background="@drawable/round_corner"
+            android:backgroundTint="?android:attr/textColorSecondary"
+            android:textColor="?android:attr/textColorPrimary"
+            android:hint="@string/send_message"
+            android:paddingStart="20dp"
+            android:paddingEnd="10dp"
+            android:textAlignment="textStart"
+            android:textSize="18sp" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/send_message_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_toEndOf="@+id/message_input"
+            android:layout_marginStart="-60dp"
+            android:layout_marginBottom="20dp"
+            android:layout_marginEnd="10dp"
+            android:backgroundTint="?android:attr/textColorSecondary"
+            android:layout_alignParentBottom="true"
+            app:cardCornerRadius="45dp">
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/ic_send"
+                android:backgroundTint="@android:color/transparent"
+                android:layout_gravity="center"
+                android:scaleType="centerCrop"/>
+
+        </androidx.cardview.widget.CardView>
+
+    </RelativeLayout>
+    <!-- Chat END -->
 
 
     <RelativeLayout
         android:layout_width="match_parent"
+        android:id="@+id/bottom_navigation_layout"
         android:layout_height="0dp"
         android:layout_weight="0.115">
 
@@ -44,12 +582,9 @@
             android:layout_height="match_parent"
             android:layout_alignParentTop="true"
             android:layout_alignParentBottom="true"
-            android:layout_margin="15dp"
-            android:background="@drawable/round_corner"
-            android:elevation="2dp"
+            android:background="?android:colorPrimary"
             app:itemIconSize="35dp"
             app:itemIconTint="@drawable/item_selector"
-            app:itemRippleColor="@android:color/transparent"
             app:labelVisibilityMode="unlabeled"
             app:menu="@menu/event_item_menu" />
 

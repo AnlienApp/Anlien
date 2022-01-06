@@ -3,9 +3,11 @@ package com.zitrouille.anlien
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Rect
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType
 import android.view.MotionEvent
 import android.view.View
 import android.view.Window
@@ -23,16 +25,18 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import android.widget.EditText
-
-
-
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class CreateEventActivity : AppCompatActivity() {
 
-    private var mAuth: FirebaseAuth? = null
+    private var mCurrentUserId: String? = ""
     private var mDatabase: FirebaseFirestore? = null
     private var mStorage: FirebaseStorage? = null
+
+    private var mDateInMillis = 0L
 
     private var mDialog: Dialog? = null
 
@@ -42,22 +46,31 @@ class CreateEventActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_event)
 
-        val bottomMenu = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        val informationView: View = bottomMenu.findViewById(R.id.nav_info)
-        informationView.performClick()
-
-        val backView: View = bottomMenu.findViewById(R.id.nav_back)
+        val backView: ImageView = findViewById(R.id.back)
         backView.setOnClickListener {
             finish()
         }
 
-        mAuth = FirebaseAuth.getInstance()
+        findViewById<EditText>(R.id.title).inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+
+        mCurrentUserId = FirebaseAuth.getInstance().currentUser!!.uid
         mDatabase = FirebaseFirestore.getInstance()
         mStorage = FirebaseStorage.getInstance()
 
         initDatePicker(findViewById(R.id.date))
+        initHourPicker(findViewById(R.id.hour))
         initParticipantList()
-        initCreatetionButton()
+        initCreationButton()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkCurrentUser()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        checkCurrentUser()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
@@ -77,28 +90,40 @@ class CreateEventActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
-    private fun initCreatetionButton() {
-        findViewById<AppCompatButton>(R.id.create_event_button).setOnClickListener {
+    private fun initCreationButton() {
+        findViewById<ImageView>(R.id.create_event_button).setOnClickListener {
             val title = findViewById<EditText>(R.id.title).text
             val address = findViewById<EditText>(R.id.address).text
-            val date = findViewById<TextView>(R.id.date).text
+            val hour = findViewById<TextView>(R.id.hour).text
+            val description = findViewById<TextView>(R.id.description).text
             if(title.isNotEmpty() && address.isNotEmpty() && title.isNotBlank() && address.isNotBlank()) {
                 val currentEventData = hashMapOf(
                     "title" to title.toString(),
                     "address" to address.toString(),
-                    "date" to date.toString(),
-                    "organizerId" to mAuth!!.currentUser!!.uid
+                    "lock" to false,
+                    "date" to mDateInMillis,
+                    "hour" to hour.toString(),
+                    "description" to description.toString(),
+                    "organizerId" to mCurrentUserId
                 )
                 mDatabase!!.collection("events").add(currentEventData)
                     .addOnSuccessListener { event ->
 
                         val data = hashMapOf(
                             "eventId" to event.id,
+                            "eventDateInMilli" to mDateInMillis,
                         )
-                        mDatabase!!.collection("users").document(mAuth!!.currentUser!!.uid).collection("events").add(data).addOnSuccessListener {
+                        mDatabase!!.collection("users").document(mCurrentUserId.toString()).collection("events").add(data).addOnSuccessListener {
                             if (null != mParticipantList) {
                                 if(0 == mParticipantList!!.size) {
-                                    finish()
+                                    findViewById<ImageView>(R.id.create_event_button).animate().rotation(360f).withEndAction {
+                                        finish()
+                                        val intent =
+                                            Intent(applicationContext, EventActivity::class.java)
+                                        intent.putExtra("eventId", event.id)
+                                        intent.putExtra("organizerId", mCurrentUserId.toString())
+                                        startActivity(intent)
+                                    }
                                 }
                                 for (participant in mParticipantList!!) {
                                     val participantData = hashMapOf(
@@ -109,7 +134,14 @@ class CreateEventActivity : AppCompatActivity() {
                                         .addOnSuccessListener {
                                             mDatabase!!.collection("users").document(participant.getUserId()).collection("events").add(data).addOnSuccessListener {
                                                 if(participant == mParticipantList!![mParticipantList!!.size-1])
-                                                    finish()
+                                                    findViewById<ImageView>(R.id.create_event_button).animate().rotation(360f).withEndAction {
+                                                        finish()
+                                                        val intent =
+                                                            Intent(applicationContext, EventActivity::class.java)
+                                                        intent.putExtra("eventId", event.id)
+                                                        intent.putExtra("organizerId", mCurrentUserId.toString())
+                                                        startActivity(intent)
+                                                    }
                                             }
                                         }
                                 }
@@ -162,7 +194,7 @@ class CreateEventActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = mDialog!!.findViewById(R.id.friend_list)
         val participantList: ArrayList<CreateEventFriend> = ArrayList()
         mDatabase!!.collection("users")
-            .document(mAuth!!.currentUser!!.uid)
+            .document(mCurrentUserId.toString())
             .collection("friends").get().addOnSuccessListener { documents ->
 
                 val recyclerView1 = findViewById<RecyclerView>(R.id.participant_list)
@@ -174,12 +206,12 @@ class CreateEventActivity : AppCompatActivity() {
                     val userId = doc.getString("userId").toString()
                     var bIsPresent = false
                     if(null != adapter1)
-                        bIsPresent = adapter1!!.isPresent(userId)
+                        bIsPresent = adapter1.isPresent(userId)
                     participantList.add(CreateEventFriend(userId, bIsPresent))
                 }
 
                 val linearLayoutManager = LinearLayoutManager(applicationContext)
-                linearLayoutManager.orientation = RecyclerView.HORIZONTAL
+                linearLayoutManager.orientation = RecyclerView.VERTICAL
                 recyclerView.layoutManager = linearLayoutManager
                 recyclerView.setHasFixedSize(true)
 
@@ -225,12 +257,15 @@ class CreateEventActivity : AppCompatActivity() {
      * Set the current date to the date picker
      * and initialize date picker callback
      */
-    @SuppressLint("SimpleDateFormat")
+    @SuppressLint("SimpleDateFormat", "SetTextI18n")
     private fun initDatePicker(iView: TextView) {
         val today: Date = Calendar.getInstance().time //getting date
         val formatter = SimpleDateFormat("EEEE d MMMM yyyy") //formating according to my need
         val date: String = formatter.format(today)
-        iView.text = date
+        mDateInMillis = Calendar.getInstance().timeInMillis
+        iView.text = date.substring(0, 1)
+            .uppercase(Locale.getDefault()) + date.substring(1)
+            .lowercase(Locale.getDefault())
 
         // Display date picker
         iView.setOnClickListener {
@@ -243,6 +278,7 @@ class CreateEventActivity : AppCompatActivity() {
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText(getString(R.string.choose_date))
             .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+            .setTheme(R.style.MaterialCalendarTheme)
             .build()
         datePicker.show(supportFragmentManager, "datePicker")
         datePicker.addOnPositiveButtonClickListener {
@@ -250,7 +286,81 @@ class CreateEventActivity : AppCompatActivity() {
             val formatter = SimpleDateFormat("EEEE d MMMM yyyy") //formating according to my need
             newDate.time = it
             iView.text = formatter.format(newDate)
+            mDateInMillis = it
         }
     }
+
+    @SuppressLint("SimpleDateFormat", "SetTextI18n")
+    private fun initHourPicker(iView: TextView) {
+        val rightNow = Calendar.getInstance()
+        val currentHourIn24Format = rightNow[Calendar.HOUR_OF_DAY]
+        val currentMinute = rightNow[Calendar.MINUTE]
+
+        if(10 > currentHourIn24Format) {
+            if(10 > currentMinute) {
+                iView.text = "0$currentHourIn24Format : 0$currentMinute"
+            }
+            else {
+                iView.text = "0$currentHourIn24Format : $currentMinute"
+            }
+        }
+        else {
+            if(10 > currentMinute) {
+                iView.text = "$currentHourIn24Format : 0$currentMinute"
+            }
+            else {
+                iView.text = "$currentHourIn24Format : $currentMinute"
+            }
+        }
+        // Display hour picker
+        iView.setOnClickListener {
+            displayHourPicker(iView)
+        }
+    }
+
+    @SuppressLint("SimpleDateFormat", "SetTextI18n")
+    private fun displayHourPicker(iView: TextView) {
+        val rightNow = Calendar.getInstance()
+        val currentHourIn24Format = rightNow[Calendar.HOUR_OF_DAY]
+        val currentMinute = rightNow[Calendar.MINUTE]
+        val picker =
+            MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(currentHourIn24Format)
+                .setMinute(currentMinute)
+                .setTitleText(getString(R.string.seletect_time))
+                .build()
+        picker.show(supportFragmentManager, "timePicker")
+        picker.addOnPositiveButtonClickListener {
+            if(10 > picker.hour) {
+                if(10 > picker.minute) {
+                    iView.text = "0${picker.hour} : 0${picker.minute}"
+                }
+                else {
+                    iView.text = "0${picker.hour} : ${picker.minute}"
+                }
+            }
+            else {
+                if(10 > picker.minute) {
+                    iView.text = "${picker.hour} : 0${picker.minute}"
+                }
+                else {
+                    iView.text = "${picker.hour} : ${picker.minute}"
+                }
+            }
+        }
+    }
+
+    /**
+     * Called at the start of the application, check if a user is already connected to the app
+     * If not, return directly at the beginning the the call.
+     * If user is yet connected, redirect him to the homepage activity.
+     */
+    private fun checkCurrentUser() {
+        if(null == FirebaseAuth.getInstance().currentUser) {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+    }
+
 
 }

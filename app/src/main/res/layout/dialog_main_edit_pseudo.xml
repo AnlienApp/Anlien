@@ -6,7 +6,7 @@
     android:id="@+id/main_layout"
     android:layout_width="250dp"
     android:layout_height="300dp"
-    android:background="@drawable/round_corner_dark">
+    android:background="@drawable/round_corner">
 
     <ImageView
         android:id="@+id/imageView"
@@ -34,6 +34,8 @@
         android:textAlignment="center"
         android:textSize="20sp"
         app:counterEnabled="true"
+        android:backgroundTint="?android:attr/textColorSecondary"
+        android:textColor="?android:attr/textColorPrimary"
         app:counterMaxLength="15"
         app:layout_constraintBottom_toTopOf="@+id/valid"
         app:layout_constraintEnd_toEndOf="parent"

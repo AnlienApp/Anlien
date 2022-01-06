@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#2a3d43"
+    android:background="?android:colorPrimary"
     android:weightSum="1">
 
     <RelativeLayout
@@ -24,7 +24,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:text="@string/my_activity"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -33,7 +33,7 @@
                 android:id="@+id/search_friend_layout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
+                android:layout_marginEnd="10dp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/add_friend"
@@ -46,7 +46,8 @@
                     android:src="@drawable/ic_search"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@+id/search_bar"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <EditText
                     android:id="@+id/search_bar"
@@ -54,17 +55,29 @@
                     android:layout_height="wrap_content"
                     android:alpha="0.8"
                     android:background="@drawable/round_corner_small"
+                    android:backgroundTint="?android:attr/textColorSecondary"
                     android:padding="5dp"
                     android:paddingStart="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="15sp"
                     android:visibility="gone"
-                    android:textColor="@color/black"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     tools:ignore="RtlSymmetry" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <ImageView
+                android:id="@+id/join_event"
+                android:layout_width="26dp"
+                android:layout_height="29dp"
+                android:src="@drawable/ic_qr_scanner"
+                android:layout_marginEnd="20dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/create_event"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/add_friend"
@@ -75,7 +88,19 @@
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?android:attr/textColorPrimary" />
+
+            <ImageView
+                android:id="@+id/display_history"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/ic_history"
+                android:layout_marginEnd="20dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/join_event"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/create_event"
@@ -85,7 +110,20 @@
                 android:src="@drawable/ic_add"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?android:attr/textColorPrimary" />
+
+            <ImageView
+                android:id="@+id/logout"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_logout"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?android:attr/textColorPrimary" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -127,7 +165,7 @@
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 android:src="@drawable/planner"
-                android:alpha="0.5"
+                android:alpha="0.7"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -139,7 +177,7 @@
                 android:alpha="0.5"
                 android:layout_marginTop="15dp"
                 android:text="@string/no_event"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/eventListEmpty"
@@ -153,7 +191,7 @@
                 android:alpha="0.5"
                 android:layout_marginTop="15dp"
                 android:text="@string/wait_invitation"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/no_event_text_1"
@@ -167,7 +205,7 @@
                 android:alpha="0.5"
                 android:layout_marginTop="10dp"
                 android:text="@string/or"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/no_event_text_2"
@@ -181,23 +219,12 @@
                 android:text="@string/no_event_create_one"
                 android:alpha="0.5"
                 android:layout_marginTop="10dp"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/no_event_text_3"
                 app:layout_constraintStart_toStartOf="@+id/no_event_text_3"
                 app:layout_constraintTop_toBottomOf="@+id/no_event_text_3" />
-
-            <ImageView
-                android:id="@+id/create_event_reminder"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:alpha="0.9"
-                android:layout_marginTop="15dp"
-                android:src="@drawable/ic_circle_add"
-                app:layout_constraintEnd_toEndOf="@+id/no_event_text_4"
-                app:layout_constraintStart_toStartOf="@+id/no_event_text_4"
-                app:layout_constraintTop_toBottomOf="@+id/no_event_text_4" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -242,7 +269,7 @@
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 android:src="@drawable/alone"
-                android:alpha="0.5"
+                android:alpha="0.7"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -254,7 +281,7 @@
                 android:alpha="0.5"
                 android:layout_marginTop="15dp"
                 android:text="@string/no_friend"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/friendListEmpty"
@@ -267,23 +294,12 @@
                 android:layout_height="wrap_content"
                 android:text="@string/scan_friend_qr_code"
                 android:alpha="0.5"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/alone_text_1"
                 app:layout_constraintStart_toStartOf="@+id/alone_text_1"
                 app:layout_constraintTop_toBottomOf="@+id/alone_text_1" />
-
-            <ImageView
-                android:id="@+id/add_friend_reminder"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:alpha="0.9"
-                android:layout_marginTop="15dp"
-                android:src="@drawable/ic_qr_scanner"
-                app:layout_constraintEnd_toEndOf="@+id/alone_text_2"
-                app:layout_constraintStart_toStartOf="@+id/alone_text_2"
-                app:layout_constraintTop_toBottomOf="@+id/alone_text_2" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -316,6 +332,7 @@
         android:layout_height="0dp"
         android:layout_weight="0.825"
         android:paddingTop="10dp"
+        android:visibility="gone"
         android:id="@+id/mainUserPage">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -323,14 +340,24 @@
             android:layout_height="match_parent"
             android:layout_marginTop="10dp">
 
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/profile_picture"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:background="@drawable/image1"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/profile_picture_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/profile_picture"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:background="@drawable/image1"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
                 android:id="@+id/userName"
@@ -338,12 +365,12 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:textAlignment="center"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/profile_picture" />
+                app:layout_constraintTop_toBottomOf="@+id/profile_picture_layout" />
 
             <ImageView
                 android:id="@+id/edit_displayed_name"
@@ -351,6 +378,7 @@
                 android:layout_height="21dp"
                 android:layout_marginStart="10dp"
                 android:src="@drawable/ic_baseline_edit_24"
+                app:tint="?android:attr/textColorPrimary"
                 app:layout_constraintBottom_toBottomOf="@+id/userName"
                 app:layout_constraintStart_toEndOf="@+id/userName"
                 app:layout_constraintTop_toTopOf="@+id/userName" />
@@ -362,7 +390,7 @@
                 android:layout_marginTop="10dp"
                 android:alpha="0.5"
                 android:textAlignment="center"
-                android:textColor="@color/white"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="13sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -399,12 +427,9 @@
             android:layout_height="match_parent"
             android:layout_alignParentTop="true"
             android:layout_alignParentBottom="true"
-            android:layout_margin="15dp"
-            android:background="@drawable/round_corner"
-            android:elevation="2dp"
+            android:background="?android:colorPrimary"
             app:itemIconSize="35dp"
             app:itemIconTint="@drawable/item_selector"
-            app:itemRippleColor="@android:color/transparent"
             app:labelVisibilityMode="unlabeled"
             app:menu="@menu/homepage_item_menu" />
 

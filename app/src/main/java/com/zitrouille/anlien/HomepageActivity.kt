@@ -7,6 +7,7 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.Image
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -39,6 +40,11 @@ import com.bumptech.glide.Glide
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.baoyz.widget.PullRefreshLayout
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.Query
+import com.google.firebase.ktx.Firebase
+import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -47,9 +53,11 @@ class HomepageActivity : AppCompatActivity() {
 
     private var mActivityMainBinding: ActivityHomepageBinding? = null
     private var mEventArrayList: ArrayList<HomepageEvent>? = null
+    private var mEventHistoryArrayList: ArrayList<HomepageEvent>? = null
     private var mFriendArrayList: ArrayList<HomepageFriend>? = null
 
     private var mQRCodeResultLauncher: ActivityResultLauncher<Intent>? = null
+    private var mQRCodeResultJoinEventLauncher: ActivityResultLauncher<Intent>? = null
     private var mCreateEventCallback: ActivityResultLauncher<Intent>? = null
 
     private var mAddFriendDialog: Dialog? = null
@@ -62,6 +70,8 @@ class HomepageActivity : AppCompatActivity() {
     private var mEventListReceptionRunning = false
 
     private var mDialog: Dialog? = null
+
+    private var mDisplayEventHistory: Boolean = false
 
     /**
      * Init different behaviors when user click on the bottom navigation menu
@@ -82,6 +92,7 @@ class HomepageActivity : AppCompatActivity() {
         initializeQrCodeCallback() // Callback manager
         initializeCreateEventCallback() // Callback manager
         initializeProfilePicture() // Personal profile picture
+        initializeQrCodeJoinEventCallback()
     }
 
     /**
@@ -98,6 +109,7 @@ class HomepageActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkCurrentUser()
+        retrieveEventList()
     }
 
     override fun onPause() {
@@ -160,6 +172,127 @@ class HomepageActivity : AppCompatActivity() {
     private fun initializeCreateEventCallback() {
         mCreateEventCallback = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             retrieveEventList()
+        }
+    }
+
+    private fun initializeQrCodeJoinEventCallback() {
+        mQRCodeResultJoinEventLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+            if(Activity.RESULT_OK == result.resultCode) {
+                val eventId = result.data!!.extras?.get("qrCode").toString()
+                displayJoinEventDialog(eventId)
+            }
+        }
+
+    }
+
+    @SuppressLint("SetTextI18n", "SimpleDateFormat")
+    private fun displayJoinEventDialog(iEventId: String) {
+
+        val database = FirebaseFirestore.getInstance()
+
+        database.collection("events").document(iEventId).get().addOnSuccessListener { doc ->
+            mAddFriendDialog = Dialog(this)
+            mAddFriendDialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            mAddFriendDialog!!.setCancelable(false)
+            mAddFriendDialog!!.setContentView(R.layout.dialog_homepage_join_event)
+            mAddFriendDialog!!.setCanceledOnTouchOutside(true)
+            mAddFriendDialog!!.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+
+            mAddFriendDialog!!.findViewById<TextView>(R.id.event_name).text = doc.data!!["title"].toString()
+
+            // Retrieve date from milliseconds
+            val newDate: Date = Calendar.getInstance().time
+            val formatter = SimpleDateFormat("EEEE d MMMM yyyy")
+            newDate.time = doc.getLong("date")!!
+            mAddFriendDialog!!.findViewById<TextView>(R.id.event_date).text = formatter.format(newDate).toString().substring(0, 1)
+                .uppercase(Locale.getDefault()) + formatter.format(newDate).toString().substring(1)
+                .lowercase(Locale.getDefault())
+
+            mAddFriendDialog!!.findViewById<TextView>(R.id.event_hour).text = doc.data!!["hour"].toString()
+
+            val organizerId = doc.data!!["organizerId"].toString()
+            if(globalUserInformations.containsKey(organizerId)) {
+                mAddFriendDialog!!.findViewById<TextView>(R.id.event_organizer_name).text = globalUserInformations[organizerId]!!.mDisplayName
+                if(null != globalUserInformations[organizerId]!!.mUri) {
+                    Glide.with(applicationContext).load(globalUserInformations[organizerId]!!.mUri).into(mAddFriendDialog!!.findViewById(R.id.event_organizer_profile_picture))
+                }
+                else {
+                    val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                        .child("profileImages")
+                        .child("$organizerId.jpeg")
+                    storageRef.downloadUrl.addOnSuccessListener {
+                        Glide.with(applicationContext).load(it).into(mAddFriendDialog!!.findViewById(R.id.event_organizer_profile_picture))
+                        globalUserInformations[organizerId]!!.mUri = it
+                    }
+                }
+            }
+            else {
+                val newUserCache = MainActivity.Companion.UserInformation()
+                database.collection("users")
+                        .document(organizerId).get().addOnSuccessListener { userDoc ->
+                            mAddFriendDialog!!.findViewById<TextView>(R.id.event_organizer_name).text =
+                                userDoc.data!!["displayNamed"].toString()
+                            newUserCache.mDisplayName = userDoc.data!!["displayNamed"].toString()
+                            newUserCache.mUniqueId = userDoc.data!!["uniquePseudo"].toString()
+
+                            // FIREBASE - FIRESTORE | FIRESTORAGE
+                            val storageRef: StorageReference =
+                                FirebaseStorage.getInstance().reference
+                                    .child("profileImages")
+                                    .child("$organizerId.jpeg")
+                            storageRef.downloadUrl.addOnSuccessListener {
+                                Glide.with(applicationContext).load(it)
+                                    .into(mAddFriendDialog!!.findViewById(R.id.event_organizer_profile_picture))
+                                newUserCache.mUri = it
+                            }
+                        }
+                globalUserInformations[organizerId] = newUserCache
+            }
+            database.collection("users")
+                    .document(mAuth!!.currentUser!!.uid)
+                    .collection("events")
+                    .whereEqualTo("eventId", iEventId)
+                    .get().addOnSuccessListener { docs ->
+                        if(docs.size() != 0) {
+                            mAddFriendDialog!!.findViewById<ImageView>(R.id.join_event).setOnClickListener {
+                                mAddFriendDialog!!.dismiss()
+                                val intent =
+                                    Intent(applicationContext, EventActivity::class.java)
+                                intent.putExtra("eventId", iEventId)
+                                intent.putExtra("organizerId", doc["organizerId"].toString())
+                                startActivity(intent)
+                            }
+                        }
+                        else {
+                            mAddFriendDialog!!.findViewById<ImageView>(R.id.join_event).setOnClickListener {
+                                val participantData = hashMapOf(
+                                    "userId" to mAuth!!.currentUser!!.uid,
+                                    "status" to 1, // 0 cancel, 1 pending, 2 accept
+                                )
+                                database.collection("events")
+                                    .document(iEventId)
+                                    .collection("participants")
+                                    .add(participantData).addOnSuccessListener {
+                                        val eventData = hashMapOf(
+                                            "eventId" to iEventId,
+                                            "eventDateInMilli" to doc["date"],
+                                        )
+                                        database.collection("users")
+                                                .document(mAuth!!.currentUser!!.uid)
+                                                .collection("events")
+                                                .add(eventData).addOnSuccessListener {
+                                                    mAddFriendDialog!!.dismiss()
+                                                    val intent =
+                                                        Intent(applicationContext, EventActivity::class.java)
+                                                    intent.putExtra("eventId", iEventId)
+                                                    intent.putExtra("organizerId", doc["organizerId"].toString())
+                                                    startActivity(intent)
+                                            }
+                                }
+                            }
+                        }
+                    }
+            mAddFriendDialog!!.show()
         }
     }
 
@@ -315,6 +448,13 @@ class HomepageActivity : AppCompatActivity() {
 
     private fun sendFriendRequest(iUserId: String) {
 
+        mDatabase!!.collection("users").document(mAuth!!.currentUser!!.uid).collection("friends").get().addOnSuccessListener { snap ->
+            if(200 > snap.size()) {
+                Toast.makeText(applicationContext, getString(R.string.friend_limit), Toast.LENGTH_LONG).show()
+                return@addOnSuccessListener
+            }
+        }
+
         val currentUserData = hashMapOf(
             "userId" to iUserId,
             "request" to true,
@@ -355,6 +495,12 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.create_event).animate().alpha(1F).withEndAction {
                 findViewById<ImageView>(R.id.create_event).visibility = View.VISIBLE
             }
+            findViewById<ImageView>(R.id.display_history).animate().alpha(1F).withEndAction {
+                findViewById<ImageView>(R.id.display_history).visibility = View.VISIBLE
+            }
+            findViewById<ImageView>(R.id.join_event).animate().alpha(1F).withEndAction {
+                findViewById<ImageView>(R.id.join_event).visibility = View.VISIBLE
+            }
         }
         else {
             findViewById<RelativeLayout>(R.id.eventPage).animate().alpha(0F).withEndAction {
@@ -362,6 +508,12 @@ class HomepageActivity : AppCompatActivity() {
             }
             findViewById<ImageView>(R.id.create_event).animate().alpha(0F).withEndAction {
                 findViewById<ImageView>(R.id.create_event).visibility = View.GONE
+            }
+            findViewById<ImageView>(R.id.display_history).animate().alpha(0F).withEndAction {
+                findViewById<ImageView>(R.id.display_history).visibility = View.GONE
+            }
+            findViewById<ImageView>(R.id.join_event).animate().alpha(1F).withEndAction {
+                findViewById<ImageView>(R.id.join_event).visibility = View.GONE
             }
         }
     }
@@ -400,10 +552,16 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<RelativeLayout>(R.id.mainUserPage).animate().alpha(1F).withEndAction {
                 findViewById<RelativeLayout>(R.id.mainUserPage).visibility = View.VISIBLE
             }
+            findViewById<ImageView>(R.id.logout).animate().alpha(1F).withEndAction {
+                findViewById<ImageView>(R.id.logout).visibility = View.VISIBLE
+            }
         }
         else {
             findViewById<RelativeLayout>(R.id.mainUserPage).animate().alpha(0F).withEndAction {
                 findViewById<RelativeLayout>(R.id.mainUserPage).visibility = View.GONE
+            }
+            findViewById<ImageView>(R.id.logout).animate().alpha(0F).withEndAction {
+                findViewById<ImageView>(R.id.logout).visibility = View.GONE
             }
         }
     }
@@ -412,16 +570,33 @@ class HomepageActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.my_activity)
         homepageVisibility(true)
         friendpageVisibility(false)
+        userpageVisibility(false)
         findViewById<RelativeLayout>(R.id.mainUserPage).animate().alpha(0F).withEndAction {
             findViewById<RelativeLayout>(R.id.mainUserPage).visibility = View.GONE
         }
 
-        if(null == mEventArrayList) {
-            findViewById<ImageView>(R.id.create_event_reminder).setOnClickListener {
+        if(null == mEventArrayList || null == mEventHistoryArrayList) {
+
+            findViewById<ImageView>(R.id.join_event).setOnClickListener {
+                mQRCodeResultJoinEventLauncher!!.launch(Intent(this, ScannerActivity::class.java))
+            }
+
+            findViewById<ConstraintLayout>(R.id.eventListEmpty).setOnClickListener {
                 mCreateEventCallback!!.launch(Intent(this, CreateEventActivity::class.java))
             }
             findViewById<ImageView>(R.id.create_event).setOnClickListener {
                 mCreateEventCallback!!.launch(Intent(this, CreateEventActivity::class.java))
+            }
+            findViewById<ImageView>(R.id.display_history).setOnClickListener {
+                mDisplayEventHistory = !mDisplayEventHistory
+                if(mDisplayEventHistory) {
+                    findViewById<ImageView>(R.id.display_history).clearColorFilter()
+                    findViewById<ImageView>(R.id.display_history).setColorFilter(R.attr.colorSecondary)
+                }
+                else {
+                    findViewById<ImageView>(R.id.display_history).clearColorFilter()
+                }
+                retrieveEventList()
             }
             retrieveEventList()
         }
@@ -438,7 +613,7 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.add_friend).setOnClickListener {
                 mQRCodeResultLauncher!!.launch(Intent(this, ScannerActivity::class.java))
             }
-            findViewById<ImageView>(R.id.add_friend_reminder).setOnClickListener {
+            findViewById<ConstraintLayout>(R.id.friendListEmpty).setOnClickListener {
                 mQRCodeResultLauncher!!.launch(Intent(this, ScannerActivity::class.java))
             }
         }
@@ -622,10 +797,14 @@ class HomepageActivity : AppCompatActivity() {
                     }
                     mDialog!!.show()
                 }
+            }
 
+            findViewById<ImageView>(R.id.logout).setOnClickListener {
+                Firebase.auth.signOut()
+                checkCurrentUser()
             }
         }
-        findViewById<ImageView>(R.id.profile_picture).setOnClickListener {
+        findViewById<ConstraintLayout>(R.id.profile_picture_layout).setOnClickListener {
             // start picker to get image for cropping and then use the image in cropping activity
             CropImage.activity()
                 .setGuidelines(CropImageView.Guidelines.ON)
@@ -673,6 +852,10 @@ class HomepageActivity : AppCompatActivity() {
             Glide.with(applicationContext).load(iUri).into(findViewById(R.id.profile_picture))
         }.addOnFailureListener {
             Toast.makeText(this, "Echec de la mise à jour", Toast.LENGTH_LONG).show()
+        }
+        val uid: String = mAuth!!.currentUser!!.uid
+        if(globalUserInformations.containsKey(uid)) {
+            globalUserInformations[uid]!!.mUri = iUri
         }
     }
 
@@ -780,14 +963,20 @@ class HomepageActivity : AppCompatActivity() {
         mActivityMainBinding!!.eventList.adapter = null
         if(null != mEventArrayList)
             mEventArrayList!!.clear()
+        if(null != mEventHistoryArrayList)
+            mEventHistoryArrayList!!.clear()
 
         /**
          * Retrieve all friends from the current user
          */
+        val time: Long = System.currentTimeMillis()-86400000 // Previous day as the current one
         mDatabase!!.collection("users")
             .document(mAuth!!.currentUser!!.uid)
             .collection("events")
-            .get().addOnSuccessListener { documents ->
+            .orderBy("eventDateInMilli", Query.Direction.ASCENDING)
+            .limit(50)
+            .get()
+            .addOnSuccessListener { documents ->
 
                 if(0 == documents.size()) {
                     mEventListReceptionRunning = false
@@ -796,12 +985,32 @@ class HomepageActivity : AppCompatActivity() {
                 }
                 else {
                     mEventArrayList = ArrayList()
+                    mEventHistoryArrayList = ArrayList()
                     for (doc in documents) {
                         if (null == doc) continue
-                        mEventArrayList!!.add(HomepageEvent(doc["eventId"].toString()))
+                        if(time > doc["eventDateInMilli"] as Long) {
+                            mEventHistoryArrayList!!.add(0,
+                                HomepageEvent(
+                                    doc["eventId"].toString(),
+                                )
+                            )
+                        }
+                        else {
+                            mEventArrayList!!.add(
+                                HomepageEvent(
+                                    doc["eventId"].toString(),
+                                )
+                            )
+                        }
                     }
-                    mActivityMainBinding!!.eventList.adapter =
-                        HomepageEventListAdapter(this, mEventArrayList!!)
+                    if(!mDisplayEventHistory) {
+                        mActivityMainBinding!!.eventList.adapter =
+                            HomepageEventListAdapter(this, mEventArrayList!!)
+                    }
+                    else {
+                        mActivityMainBinding!!.eventList.adapter =
+                            HomepageEventListAdapter(this, mEventHistoryArrayList!!)
+                    }
                     mEventListReceptionRunning = false
                     findViewById<ListView>(R.id.eventList).visibility = View.VISIBLE
                     findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.GONE
@@ -834,9 +1043,8 @@ class HomepageActivity : AppCompatActivity() {
      * If user is yet connected, redirect him to the homepage activity.
      */
     private fun checkCurrentUser() {
-        val currentUser = mAuth!!.currentUser
-        if(null == currentUser) {
-            startActivity(Intent(this, HomepageActivity::class.java))
+        if(null == FirebaseAuth.getInstance().currentUser) {
+            startActivity(Intent(this, MainActivity::class.java))
         }
     }
 
