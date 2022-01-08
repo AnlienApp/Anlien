@@ -2,8 +2,9 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import android.os.Build
+import android.util.Log
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import kotlin.collections.ArrayList
@@ -13,11 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
-import android.content.DialogInterface
-
-
-
-
+import com.google.firebase.storage.StorageReference
 
 class HomepageFriendListAdapter(private val iContext : Activity, private val iArrayList: ArrayList<HomepageFriend>):
     ArrayAdapter<HomepageFriend>(iContext, R.layout.item_homepage_friend, iArrayList) {
@@ -27,23 +24,34 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
         val inflater: LayoutInflater = LayoutInflater.from(iContext)
         val view: View = inflater.inflate(R.layout.item_homepage_friend, null)
         view.findViewById<TextView>(R.id.name).text = iArrayList[iPosition].getName()
-        view.findViewById<TextView>(R.id.identifiant).text = iArrayList[iPosition].getUniquePseudo()
+        view.findViewById<TextView>(R.id.identifiant).text = iArrayList[iPosition].getIdentifiant()
 
         /**
          * Display profile picture if it exists
          */
-        if(globalUserInformations.containsKey(iArrayList[iPosition].getFriendId()) && null != globalUserInformations[iArrayList[iPosition].getFriendId()]!!.mUri) {
-            Glide.with(iContext).load(globalUserInformations[iArrayList[iPosition].getFriendId()]!!.mUri).into(view.findViewById(R.id.profile_picture))
+        if(userCacheInformation.containsKey(iArrayList[iPosition].getFriendId())) {
+            Glide.with(iContext).load(userCacheInformation[iArrayList[iPosition].getFriendId()]!!.uri).into(view.findViewById(R.id.profile_picture))
         }
         else {
-            val profilePictureRef =
-                FirebaseStorage.getInstance().reference.child("profileImages/" + iArrayList[iPosition].getFriendId() + ".jpeg")
-            profilePictureRef.downloadUrl.addOnSuccessListener {
-                Glide.with(iContext).load(it).into(view.findViewById(R.id.profile_picture))
-                if(globalUserInformations.containsKey(iArrayList[iPosition].getFriendId())) {
-                    globalUserInformations[iArrayList[iPosition].getFriendId()]!!.mUri = it
+            val userId = iArrayList[iPosition].getFriendId()
+            FirebaseFirestore.getInstance().collection("users")
+                .document(userId).get().addOnSuccessListener { doc ->
+                    if(doc.exists()) {
+                        Log.i("Database request", "User retrieved in HomepageFriendListAdapter::getView - "+doc.id)
+                        val userCache = MainActivity.Companion.UserInformation()
+                        userCache.displayName = doc["displayName"].toString()
+                        userCache.identifiant = doc["identifiant"].toString()
+                        userCache.notificationToken = doc["notificationToken"].toString()
+                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                            .child("profileImages")
+                            .child("$userId.jpeg")
+                        storageRef.downloadUrl.addOnSuccessListener { url ->
+                            userCache.uri = url
+                            Glide.with(iContext).load(url).into(view.findViewById(R.id.profile_picture))
+                        }
+                        userCacheInformation[userId] = userCache
+                    }
                 }
-            }
         }
 
         val user: HomepageFriend = iArrayList[iPosition]
@@ -57,6 +65,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                 .collection("friends")
                 .whereEqualTo("userId", iArrayList[iPosition].getFriendId())
                 .get().addOnSuccessListener { documents ->
+                    Log.i("Database request", "Filtered friend list retrieved in HomepageFriendListAdapter::getView")
                     if(0 == documents.size()) {
                         initFromNotFriendquest(view)
                     }
@@ -99,20 +108,7 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
          * When user click on more menu, create popup window
          */
         iView.findViewById<ImageView>(R.id.delete).setOnClickListener {
-
-            val builder: AlertDialog.Builder = AlertDialog.Builder(iView.context)
-
-            builder.setTitle("Supprimer")
-            builder.setMessage(context.getString(R.string.are_you_sure))
-
-            builder.setPositiveButton(
-                context.getString(R.string.yes)
-            ) { dialog, _ -> // Do nothing but close the dialog
-                dialog.dismiss()
-                deleteFriend(iView, iPosition)
-            }
-
-            builder.create().show()
+            deleteFriend(iView, iPosition)
         }
 
         if (bRequest && !bShouldBeValid) {
@@ -132,20 +128,19 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                 val auth = FirebaseAuth.getInstance()
                 val database = FirebaseFirestore.getInstance()
 
+                // Set the request to false for the current user
                 database.collection("users")
                     .document(auth.currentUser!!.uid)
                     .collection("friends")
                     .whereEqualTo("userId", iArrayList[iPosition].getFriendId())
                     .get().addOnSuccessListener { documents ->
-                        if (documents.size() != 0) {
+                        Log.i("Database request", "Filtered friend list retrieved in HomepageFriendListAdapter::initFromFriendRequest")
+                        for(doc in documents) {
+                            if(!doc.exists()) continue
                             val information = hashMapOf(
                                 "request" to false,
                             )
-                            database.collection("users")
-                                .document(auth.currentUser!!.uid)
-                                .collection("friends")
-                                .document(documents.documents[0].id)
-                                .update(information as Map<String, Any>).addOnSuccessListener {
+                            doc.reference.update(information as Map<String, Any>).addOnSuccessListener {
                                     iView.findViewById<ImageView>(R.id.valid).visibility =
                                         View.GONE
                                     iView.findViewById<ImageView>(R.id.cancel).visibility =
@@ -156,20 +151,19 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
                         }
                     }
 
+                // Set the request to false for the friend user
                 database.collection("users")
                     .document(iArrayList[iPosition].getFriendId())
                     .collection("friends")
                     .whereEqualTo("userId", auth.currentUser!!.uid)
                     .get().addOnSuccessListener { documents ->
-                        if (documents.size() != 0) {
+                        Log.i("Database request", "Filtered friend list retrieved in HomepageFriendListAdapter::initFromFriendRequest")
+                        for(doc in documents){
+                            if(!doc.exists()) continue
                             val information = hashMapOf(
                                 "request" to false,
                             )
-                            database.collection("users")
-                                .document(iArrayList[iPosition].getFriendId())
-                                .collection("friends")
-                                .document(documents.documents[0].id)
-                                .update(information as Map<String, Any>).addOnSuccessListener {
+                            doc.reference.update(information as Map<String, Any>).addOnSuccessListener {
                                     iView.findViewById<ImageView>(R.id.valid).visibility =
                                         View.GONE
                                     iView.findViewById<ImageView>(R.id.cancel).visibility =
@@ -195,12 +189,10 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
             .collection("friends")
             .whereEqualTo("userId", iArrayList[iPosition].getFriendId())
             .get().addOnSuccessListener { documents ->
-                if (documents.size() != 0) {
-                    database.collection("users")
-                        .document(auth.currentUser!!.uid)
-                        .collection("friends")
-                        .document(documents.documents[0].id)
-                        .delete().addOnSuccessListener {
+                Log.i("Database request", "Filtered friend list retrieved in HomepageFriendListAdapter::initFromFriendRequest")
+                for(doc in documents) {
+                    if(!doc.exists()) continue
+                    doc.reference.delete().addOnSuccessListener {
                             iView.visibility = View.GONE
                             (iContext as HomepageActivity).retrieveFriendList()
                         }
@@ -212,12 +204,10 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
             .collection("friends")
             .whereEqualTo("userId", auth.currentUser!!.uid)
             .get().addOnSuccessListener { documents ->
-                if (documents.size() != 0) {
-                    database.collection("users")
-                        .document(iArrayList[iPosition].getFriendId())
-                        .collection("friends")
-                        .document(documents.documents[0].id)
-                        .delete().addOnSuccessListener {
+                Log.i("Database request", "Filtered friend list retrieved in HomepageFriendListAdapter::initFromFriendRequest")
+                for(doc in documents) {
+                    if(!doc.exists()) continue
+                    doc.reference.delete().addOnSuccessListener {
                             iView.visibility = View.GONE
                             (iContext as HomepageActivity).retrieveFriendList()
                         }

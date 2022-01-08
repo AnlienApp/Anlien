@@ -2,6 +2,7 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +13,7 @@ import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEventProfile>) :
     RecyclerView.Adapter<HomepageEventProfileListAdapter.ViewHolder>() {
@@ -51,41 +52,52 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
             val userId = dataSet[position].getUserId()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if(globalUserInformations.containsKey(userId)) {
-                    viewHolder.profilePictureImageView.tooltipText = globalUserInformations[userId]!!.mDisplayName
+                if(userCacheInformation.containsKey(userId)) {
+                    viewHolder.profilePictureImageView.tooltipText = userCacheInformation[userId]!!.displayName
                 }
                 else {
-                    // FIREBASE - FIRESTORE
-                    val newUserRetrieved = MainActivity.Companion.UserInformation()
                     FirebaseFirestore.getInstance()
                         .collection("users")
                         .document(userId).get().addOnSuccessListener { userDocument ->
-                            newUserRetrieved.mDisplayName =  userDocument["displayName"].toString()
-                            newUserRetrieved.mUniqueId =  userDocument["uniquePseudo"].toString()
-                            viewHolder.profilePictureImageView.tooltipText = newUserRetrieved.mDisplayName
-                            globalUserInformations[userId] = newUserRetrieved
+                            Log.i("Database request", "User retrieved in HomepageEventProfileListAdapter::onBindViewHolder - "+userDocument.id)
+                            if(userDocument.exists()) {
+                                val userCache = MainActivity.Companion.UserInformation()
+                                userCache.displayName =
+                                    userDocument["displayName"].toString()
+                                userCache.displayName = userDocument["identifiant"].toString()
+                                viewHolder.profilePictureImageView.tooltipText = userCache.displayName
+                                userCacheInformation[userId] = userCache
+                            }
                         }
                 }
             }
 
-            // FIREBASE - FIRESTORAGE
-            if(globalUserInformations.containsKey(userId) && null != globalUserInformations[userId]!!.mUri) {
-                Glide.with(viewHolder.itemView.context).load(globalUserInformations[userId]!!.mUri)
+            if(userCacheInformation.containsKey(userId)) {
+                Glide.with(viewHolder.itemView.context).load(userCacheInformation[userId]!!.uri)
                     .into(viewHolder.profilePictureImageView)
             }
             else {
-                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                    .child("profileImages")
-                    .child("$userId.jpeg")
-                storageRef.downloadUrl.addOnSuccessListener {
-                    Glide.with(viewHolder.itemView.context).load(it)
-                        .into(viewHolder.profilePictureImageView)
-                    if(globalUserInformations.containsKey(userId)) {
-                        globalUserInformations[userId]!!.mUri = it
+                FirebaseFirestore.getInstance().collection("users")
+                    .document(userId).get().addOnSuccessListener { doc ->
+                        Log.i("Database request", "User retrieved in HomepageEventProfileListAdapter::onBindViewHolder - "+doc.id)
+                        if(doc.exists()) {
+                            val userCache = MainActivity.Companion.UserInformation()
+                            userCache.displayName = doc["displayName"].toString()
+                            userCache.identifiant = doc["identifiant"].toString()
+                            userCache.notificationToken = doc["notificationToken"].toString()
+                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                .child("profileImages")
+                                .child("$userId.jpeg")
+                            storageRef.downloadUrl.addOnSuccessListener {
+                                Glide.with(viewHolder.itemView.context).load(it)
+                                    .into(viewHolder.profilePictureImageView)
+                                userCacheInformation[userId]!!.uri = it
+                                userCache.uri = it
+                            }
+                            userCacheInformation[userId] = userCache
+                        }
                     }
-                }
             }
-
         }
     }
 

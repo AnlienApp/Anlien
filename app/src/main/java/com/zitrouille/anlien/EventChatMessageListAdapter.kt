@@ -1,6 +1,7 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class EventChatMessageListAdapter(private val dataSet: ArrayList<EventChatMessage>) :
     RecyclerView.Adapter<EventChatMessageListAdapter.ViewHolder>() {
@@ -73,38 +74,59 @@ class EventChatMessageListAdapter(private val dataSet: ArrayList<EventChatMessag
             }
 
             if (View.VISIBLE == viewHolder.profilePicture.visibility) {
-                if (globalUserInformations.containsKey(userId)
-                    && null != globalUserInformations[userId]!!.mUri
-                ) {
+                if (userCacheInformation.containsKey(userId)) {
                     Glide.with(viewHolder.itemView.context)
-                        .load(globalUserInformations[userId]!!.mUri)
+                        .load(userCacheInformation[userId]!!.uri)
                         .into(viewHolder.profilePicture)
                 } else {
-                    val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                        .child("profileImages")
-                        .child("$userId.jpeg")
-                    storageRef.downloadUrl.addOnSuccessListener {
-                        Glide.with(viewHolder.itemView.context).load(it)
-                            .into(viewHolder.profilePicture)
-                        if (globalUserInformations.containsKey(userId)) {
-                            globalUserInformations[userId]!!.mUri = it
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(userId).get().addOnSuccessListener { doc ->
+                            if(doc.exists()) {
+                                Log.i("Database request", "User retrieved in EventChatMessageListAdapter::onBindViewHolder - "+doc.id)
+                                val userCache = MainActivity.Companion.UserInformation()
+                                userCache.displayName = doc["displayName"].toString()
+                                userCache.identifiant = doc["identifiant"].toString()
+                                userCache.notificationToken = doc["notificationToken"].toString()
+                                userCacheInformation[userId] = userCache
+                                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                    .child("profileImages")
+                                    .child("$userId.jpeg")
+                                storageRef.downloadUrl.addOnSuccessListener {
+                                    Glide.with(viewHolder.itemView.context).load(it)
+                                        .into(viewHolder.profilePicture)
+                                    userCache.uri = it
+                                }
+                            }
                         }
-                    }
                 }
             }
 
             if (View.VISIBLE == viewHolder.userDisplayName.visibility) {
-                if (globalUserInformations.containsKey(userId)) {
-                    viewHolder.userDisplayName.text = globalUserInformations[userId]!!.mDisplayName
+                if (userCacheInformation.containsKey(userId)) {
+                    viewHolder.userDisplayName.text = userCacheInformation[userId]!!.displayName
                 } else {
-                    val newUserRetrieved = MainActivity.Companion.UserInformation()
                     FirebaseFirestore.getInstance()
                         .collection("users")
-                        .document(userId).get().addOnSuccessListener { userDocument ->
-                            newUserRetrieved.mDisplayName = userDocument["displayName"].toString()
-                            newUserRetrieved.mUniqueId = userDocument["uniquePseudo"].toString()
+                        .document(userId).get().addOnSuccessListener { doc ->
+                            if(doc.exists()) {
+                                Log.i("Database request", "User retrieved in EventChatMessageListAdapter::onBindViewHolder - "+doc.id)
+                                val userCache = MainActivity.Companion.UserInformation()
+                                userCache.displayName = doc["displayName"].toString()
+                                userCache.identifiant = doc["identifiant"].toString()
+                                userCache.notificationToken = doc["notificationToken"].toString()
+                                viewHolder.userDisplayName.text = userCacheInformation[userId]!!.displayName
+                                userCacheInformation[userId] = userCache
+                                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                    .child("profileImages")
+                                    .child("$userId.jpeg")
+                                storageRef.downloadUrl.addOnSuccessListener {
+                                    Glide.with(viewHolder.itemView.context).load(it)
+                                        .into(viewHolder.profilePicture)
+                                    userCache.uri = it
+                                }
+                            }
                         }
-                    globalUserInformations[userId] = newUserRetrieved
                 }
             }
         }

@@ -3,7 +3,9 @@
     <style name="Theme.Anlien" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/white</item>
-        <item name="colorPrimaryVariant">@color/white</item>
+        <item name="colorAccent">@color/white_low</item>
+        <item name="colorPrimaryDark">@color/light_white</item>
+        <item name="colorPrimaryVariant">@color/white_low</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/white</item>
@@ -20,12 +22,23 @@
         <item name="android:textColorPrimary">@color/background</item>
         <item name="android:textColorSecondary">@color/grey</item>
 
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+
     </style>
 
     <style name="MaterialCalendarTheme" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
         <!-- just override the colors used in the default style -->
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimary">@color/background</item>
+    </style>
+
+    <style name="TimePickerTheme" parent="Theme.AppCompat.Light.Dialog">
+
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/background</item>
+
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
     </style>
 
 </resources>

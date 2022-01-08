@@ -1,20 +1,22 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.Window
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import androidx.appcompat.widget.AppCompatButton
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -25,10 +27,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import android.widget.EditText
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
-import kotlin.time.Duration.Companion.milliseconds
-
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class CreateEventActivity : AppCompatActivity() {
 
@@ -37,6 +44,9 @@ class CreateEventActivity : AppCompatActivity() {
     private var mStorage: FirebaseStorage? = null
 
     private var mDateInMillis = 0L
+    private var mPlaceId: String = ""
+    private var mPlaceLatitude = 0.0
+    private var mPlaceLongitude = 0.0
 
     private var mDialog: Dialog? = null
 
@@ -61,18 +71,66 @@ class CreateEventActivity : AppCompatActivity() {
         initHourPicker(findViewById(R.id.hour))
         initParticipantList()
         initCreationButton()
+        initAddressAutocomplete()
     }
 
+    private fun initAddressAutocomplete() {
+        var bEditedByAutoComple = false
+        val result = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+            if(Activity.RESULT_OK == result.resultCode) {
+                result.data?.let {
+                    val place = Autocomplete.getPlaceFromIntent(result.data)
+                    bEditedByAutoComple = true
+                    findViewById<EditText>(R.id.address).setText(place.name)
+                    mPlaceId = place.id
+                    mPlaceLatitude = place.latLng.latitude
+                    mPlaceLongitude = place.latLng.longitude
+                    bEditedByAutoComple = false
+                }
+            }
+        }
+        findViewById<ImageView>(R.id.address_autocomplete).setOnClickListener {
+            Places.initialize(applicationContext, "AIzaSyDx1OzT1RsMRkbBAHHmDAb6z_gPKGrK-LI")
+            val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
+            val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                .build(this)
+            result.launch(intent)
+        }
+        findViewById<EditText>(R.id.address).addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable) {
+                if(!bEditedByAutoComple) {
+                    mPlaceId = ""
+                    mPlaceLatitude = 0.0
+                    mPlaceLongitude = 0.0
+                }
+            }
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+        })
+    }
+
+    /**
+     * If the user is not more connectect
+     * go back to the main activity screen
+     */
     override fun onResume() {
         super.onResume()
         checkCurrentUser()
     }
 
+    /**
+     * If the user is not more connectect
+     * go back to the main activity screen
+     */
     override fun onStart() {
         super.onStart()
         checkCurrentUser()
     }
 
+    /**
+     * When user wants to hide the leyboard, remove the current
+     * editext focus to remove the vertical line on it
+     */
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         if (ev!!.action == MotionEvent.ACTION_DOWN) {
             val v = currentFocus
@@ -83,15 +141,31 @@ class CreateEventActivity : AppCompatActivity() {
                     v.clearFocus()
                     val imm =
                         getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0)
+                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0)
                 }
             }
         }
         return super.dispatchTouchEvent(ev)
     }
 
+    /**
+     * Used for error in the current activity.
+     * To avoid crash, send the user to the homepage activity
+     */
+    private fun goToHomepage() {
+        startActivity(Intent(this, HomepageActivity::class.java))
+    }
+
+    /**
+     * This is the create event button set on click listener initialization.
+     * If the title and address are not empty, create a new entry in the
+     * database with event information.
+     * If creation is successfull
+     *
+     */
     private fun initCreationButton() {
-        findViewById<ImageView>(R.id.create_event_button).setOnClickListener {
+        val createEventButton = findViewById<TextView>(R.id.create_event_button)
+        createEventButton.setOnClickListener {
             val title = findViewById<EditText>(R.id.title).text
             val address = findViewById<EditText>(R.id.address).text
             val hour = findViewById<TextView>(R.id.hour).text
@@ -104,61 +178,83 @@ class CreateEventActivity : AppCompatActivity() {
                     "date" to mDateInMillis,
                     "hour" to hour.toString(),
                     "description" to description.toString(),
-                    "organizerId" to mCurrentUserId
+                    "organizerId" to mCurrentUserId,
+                    "placeId" to mPlaceId,
+                    "latitude" to mPlaceLatitude,
+                    "longitude" to mPlaceLongitude,
                 )
+
+                // Create the event entry in the database
                 mDatabase!!.collection("events").add(currentEventData)
-                    .addOnSuccessListener { event ->
+                    .addOnSuccessListener { createdEvent ->
 
                         val data = hashMapOf(
-                            "eventId" to event.id,
+                            "eventId" to createdEvent.id,
                             "eventDateInMilli" to mDateInMillis,
                         )
+
+                        // Current user is the organizer of the event, add an entry in his events list.
                         mDatabase!!.collection("users").document(mCurrentUserId.toString()).collection("events").add(data).addOnSuccessListener {
-                            if (null != mParticipantList) {
-                                if(0 == mParticipantList!!.size) {
-                                    findViewById<ImageView>(R.id.create_event_button).animate().rotation(360f).withEndAction {
-                                        finish()
-                                        val intent =
-                                            Intent(applicationContext, EventActivity::class.java)
-                                        intent.putExtra("eventId", event.id)
-                                        intent.putExtra("organizerId", mCurrentUserId.toString())
-                                        startActivity(intent)
-                                    }
-                                }
+                            if(null == mParticipantList || 0 == mParticipantList!!.size) {
+                                finishEventCreation(createdEvent.id, mCurrentUserId.toString())
+                            }
+                            else {
                                 for (participant in mParticipantList!!) {
                                     val participantData = hashMapOf(
                                         "userId" to participant.getUserId(),
                                         "status" to 1, // 0 cancel, 1 pending, 2 accept
                                     )
-                                    event.collection("participants").add(participantData)
+                                    // For each participant, add document in the created event with the presence status
+                                    // AND add a document in the participant user event collection with the event data
+                                    // AND send notification to the participant
+                                    createdEvent.collection("participants").add(participantData)
                                         .addOnSuccessListener {
-                                            mDatabase!!.collection("users").document(participant.getUserId()).collection("events").add(data).addOnSuccessListener {
-                                                if(participant == mParticipantList!![mParticipantList!!.size-1])
-                                                    findViewById<ImageView>(R.id.create_event_button).animate().rotation(360f).withEndAction {
-                                                        finish()
-                                                        val intent =
-                                                            Intent(applicationContext, EventActivity::class.java)
-                                                        intent.putExtra("eventId", event.id)
-                                                        intent.putExtra("organizerId", mCurrentUserId.toString())
-                                                        startActivity(intent)
+                                            mDatabase!!.collection("users")
+                                                .document(participant.getUserId()).get()
+                                                .addOnSuccessListener { participantUser ->
+                                                    participantUser.reference.collection("events")
+                                                        .add(data).addOnSuccessListener {
+                                                        val notification =
+                                                            FirebaseNotificationSender(
+                                                                participantUser["notificationToken"].toString(),
+                                                                "Invitation",
+                                                                userCacheInformation[mCurrentUserId]!!.displayName + " vous invite à l'évènement " + title.toString(),
+                                                                this
+                                                            )
+                                                        notification.SendNotification()
+                                                        if (participant == mParticipantList!![mParticipantList!!.size - 1])
+                                                            finishEventCreation(
+                                                                createdEvent.id,
+                                                                mCurrentUserId.toString()
+                                                            )
                                                     }
-                                            }
+                                                }
                                         }
                                 }
-                            }
-                            else {
-                                finish()
                             }
                         }
                     }
                     .addOnFailureListener {
-                        Toast.makeText(applicationContext, getString(R.string.creation_failed), Toast.LENGTH_LONG).show()
+                        goToHomepage()
                     }
             }
             else {
+                // All required fields are not fill
                 Toast.makeText(applicationContext, getString(R.string.error_name_or_address), Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    /**
+     * Make create event button rotation animation and then go to the desired activity
+     */
+    private fun finishEventCreation(iEventId: String, iOrganizerId: String) {
+        finish()
+        val intent =
+            Intent(applicationContext, EventActivity::class.java)
+        intent.putExtra("eventId", iEventId)
+        intent.putExtra("organizerId", iOrganizerId)
+        startActivity(intent)
     }
 
     private fun initParticipantList() {
@@ -196,13 +292,14 @@ class CreateEventActivity : AppCompatActivity() {
         mDatabase!!.collection("users")
             .document(mCurrentUserId.toString())
             .collection("friends").get().addOnSuccessListener { documents ->
-
+                Log.i("Database request", "Friend list retrieved in CreateEventActivity::openParticipantSelectionDialog")
                 val recyclerView1 = findViewById<RecyclerView>(R.id.participant_list)
                 var adapter1 : CreateEventParticipantListAdapter? = null
                 if(null != recyclerView1.adapter)
                     adapter1 = recyclerView1.adapter as CreateEventParticipantListAdapter
                 for(doc in documents) {
                     if(null == doc) continue
+                    if(doc["status"] == 1L) continue
                     val userId = doc.getString("userId").toString()
                     var bIsPresent = false
                     if(null != adapter1)
@@ -328,6 +425,7 @@ class CreateEventActivity : AppCompatActivity() {
                 .setTimeFormat(TimeFormat.CLOCK_24H)
                 .setHour(currentHourIn24Format)
                 .setMinute(currentMinute)
+                .setTheme(R.style.TimePickerTheme)
                 .setTitleText(getString(R.string.seletect_time))
                 .build()
         picker.show(supportFragmentManager, "timePicker")

@@ -79,7 +79,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/round_corner_blue"
             android:padding="10dp"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/white"
             android:textSize="17sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

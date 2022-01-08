@@ -1,11 +1,11 @@
 package com.zitrouille.anlien
 
-class HomepageFriend(iName: String, iUniquePseudo: String, iPendingRequest: Boolean,
+class HomepageFriend(iName: String, iIdentifiant: String, iPendingRequest: Boolean,
                      iShouldBeValid: Boolean, iFriendId: String,
                      ibFindFromSearch: Boolean) {
 
     private var mName: String = iName
-    private var mUniquePseudo: String = iUniquePseudo
+    private var mIdentifiant: String = iIdentifiant
     private var mRequest: Boolean = iPendingRequest
     private var mShouldBeValid: Boolean = iShouldBeValid
     private var mFriendId: String = iFriendId
@@ -15,8 +15,8 @@ class HomepageFriend(iName: String, iUniquePseudo: String, iPendingRequest: Bool
     fun getName() : String{
         return mName
     }
-    fun getUniquePseudo() : String{
-        return mUniquePseudo
+    fun getIdentifiant() : String{
+        return mIdentifiant
     }
     fun getRequest() : Boolean{
         return mRequest

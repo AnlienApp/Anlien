@@ -1,6 +1,7 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +13,7 @@ import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class CreateEventFriendListAdapter(private val dataSet: ArrayList<CreateEventFriend>) :
     RecyclerView.Adapter<CreateEventFriendListAdapter.ViewHolder>() {
@@ -45,34 +46,35 @@ class CreateEventFriendListAdapter(private val dataSet: ArrayList<CreateEventFri
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         val userId = dataSet[position].getUserId()
 
-        if(globalUserInformations.containsKey(userId)) {
-            viewHolder.displayNameTextView.text = globalUserInformations[userId]!!.mDisplayName
-            viewHolder.uniqueIdentifiantTextView.text = globalUserInformations[userId]!!.mUniqueId
-            if(null != globalUserInformations[userId]!!.mUri) {
-                Glide.with(viewHolder.itemView.context).load(globalUserInformations[userId]!!.mUri)
-                    .into(viewHolder.profilePicture)
-            }
+        if(userCacheInformation.containsKey(userId)) {
+            viewHolder.displayNameTextView.text = userCacheInformation[userId]!!.displayName
+            viewHolder.uniqueIdentifiantTextView.text = userCacheInformation[userId]!!.identifiant
+            Glide.with(viewHolder.itemView.context).load(userCacheInformation[userId]!!.uri)
+                .into(viewHolder.profilePicture)
         }
         else {
-            // FIREBASE - FIRESTORE | FIRESTORAGE
-            val newUserRetrieved = MainActivity.Companion.UserInformation()
             FirebaseFirestore.getInstance().collection("users")
-                .document(userId).get().addOnSuccessListener { it ->
-                    newUserRetrieved.mDisplayName = it["displayName"].toString()
-                    newUserRetrieved.mUniqueId = it["uniquePseudo"].toString()
-                    viewHolder.displayNameTextView.text = newUserRetrieved.mDisplayName
-                    viewHolder.uniqueIdentifiantTextView.text = newUserRetrieved.mUniqueId
+                .document(userId).get().addOnSuccessListener { doc ->
+                    Log.i("Database request", "User retrieved in CreateEventFriendListAdapter::onBindViewHolder - "+doc.id)
+                    if(doc.exists()) {
+                        val userCache = MainActivity.Companion.UserInformation()
+                        userCache.displayName = doc["displayName"].toString()
+                        userCache.identifiant = doc["identifiant"].toString()
+                        userCache.notificationToken = doc["notificationToken"].toString()
 
-                    val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                        .child("profileImages")
-                        .child("$userId.jpeg")
-                    storageRef.downloadUrl.addOnSuccessListener {
-                        Glide.with(viewHolder.itemView.context).load(it)
-                            .into(viewHolder.profilePicture)
-                        newUserRetrieved.mUri = it
+                        viewHolder.displayNameTextView.text = userCache.displayName
+                        viewHolder.uniqueIdentifiantTextView.text = userCache.identifiant
+                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                            .child("profileImages")
+                            .child("$userId.jpeg")
+                        storageRef.downloadUrl.addOnSuccessListener {
+                            Glide.with(viewHolder.itemView.context).load(it)
+                                .into(viewHolder.profilePicture)
+                            userCache.uri = it
+                        }
+                        userCacheInformation[userId] = userCache
                     }
                 }
-            globalUserInformations[userId] = newUserRetrieved
         }
 
         viewHolder.mainLayout.setOnClickListener {

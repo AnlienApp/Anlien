@@ -1,7 +1,9 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.os.Build
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
     RecyclerView.Adapter<EventShoppingListAdapter.ViewHolder>() {
@@ -30,6 +32,8 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
         val deleteButton: ImageView = view.findViewById(R.id.delete)
 
         var ownerId: String = ""
+        var eventOrganizerId: String = ""
+        var eventName: String = ""
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
@@ -40,49 +44,45 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
     @SuppressLint("NotifyDataSetChanged")
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.ownerId = dataSet[position].getOwner()
+        viewHolder.eventOrganizerId = dataSet[position].getEventOrganizerId()
+        viewHolder.eventName = dataSet[position].getEventName()
         viewHolder.nameTextView.text = dataSet[position].getName()
 
         if(dataSet[position].getOwner().isNotBlank() && dataSet[position].getOwner().isNotEmpty()) {
-            val bCache = globalUserInformations.containsKey(viewHolder.ownerId)
-            if(bCache) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    viewHolder.profilePictureImageView.tooltipText = globalUserInformations[viewHolder.ownerId]!!.mDisplayName
-                    viewHolder.identifiantTextView.text = globalUserInformations[viewHolder.ownerId]!!.mUniqueId
-                }
-                else {
-                    FirebaseFirestore.getInstance().collection("users").document(viewHolder.ownerId).get().addOnSuccessListener { doc ->
-                        val newUserRetrieved = MainActivity.Companion.UserInformation()
-                        newUserRetrieved.mDisplayName = doc["displayName"].toString()
-                        newUserRetrieved.mUniqueId = doc["uniquePseudo"].toString()
-                        globalUserInformations[viewHolder.ownerId] = newUserRetrieved
-                        viewHolder.identifiantTextView.text = globalUserInformations[viewHolder.ownerId]!!.mUniqueId
-                    }
-                }
-            }
-            else {
-                FirebaseFirestore.getInstance().collection("users").document(viewHolder.ownerId).get().addOnSuccessListener { doc ->
-                    val newUserRetrieved = MainActivity.Companion.UserInformation()
-                    newUserRetrieved.mDisplayName = doc["displayName"].toString()
-                    newUserRetrieved.mUniqueId = doc["uniquePseudo"].toString()
-                    globalUserInformations[viewHolder.ownerId] = newUserRetrieved
-                    viewHolder.identifiantTextView.text = globalUserInformations[viewHolder.ownerId]!!.mUniqueId
-                }
-            }
 
-            if(bCache && null != globalUserInformations[viewHolder.ownerId]!!.mUri) {
-                Glide.with(viewHolder.itemView.context).load(globalUserInformations[viewHolder.ownerId]!!.mUri).into(viewHolder.profilePictureImageView)
+            if(userCacheInformation.containsKey(viewHolder.ownerId)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    viewHolder.profilePictureImageView.tooltipText =
+                        userCacheInformation[viewHolder.ownerId]!!.displayName
+                }
+                viewHolder.identifiantTextView.text = userCacheInformation[viewHolder.ownerId]!!.identifiant
+                Glide.with(viewHolder.itemView.context).load(userCacheInformation[viewHolder.ownerId]!!.uri).into(viewHolder.profilePictureImageView)
             }
             else {
-                val ownerId = viewHolder.ownerId
-                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                    .child("profileImages")
-                    .child("$ownerId.jpeg")
-                storageRef.downloadUrl.addOnSuccessListener {
-                    Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePictureImageView)
-                    if(globalUserInformations.containsKey(viewHolder.ownerId)) {
-                        globalUserInformations[viewHolder.ownerId]!!.mUri = it
+                val userId = viewHolder.ownerId
+                FirebaseFirestore.getInstance().collection("users")
+                    .document(userId).get().addOnSuccessListener { doc ->
+                        if(doc.exists()) {
+                            Log.i("Database request", "User retrieved in EventShoppingListAdapter::onBindViewHolder - "+doc.id)
+                            val userCache = MainActivity.Companion.UserInformation()
+                            userCache.displayName = doc["displayName"].toString()
+                            userCache.identifiant = doc["identifiant"].toString()
+                            userCache.notificationToken = doc["notificationToken"].toString()
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                viewHolder.profilePictureImageView.tooltipText =
+                                    userCacheInformation[viewHolder.ownerId]!!.displayName
+                            }
+                            viewHolder.identifiantTextView.text = userCacheInformation[viewHolder.ownerId]!!.identifiant
+                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                .child("profileImages")
+                                .child("$userId.jpeg")
+                            storageRef.downloadUrl.addOnSuccessListener {
+                                Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePictureImageView)
+                                userCache.uri = it
+                            }
+                            userCacheInformation[userId] = userCache
+                        }
                     }
-                }
             }
         }
         else {
@@ -104,7 +104,7 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
                     .document(dataSet[position].getEventId())
                     .collection("shopping")
                     .document(dataSet[position].getId()).delete().addOnSuccessListener {
-                        dataSet.removeAt(viewHolder.position)
+                        dataSet.removeAt(position)
                         notifyDataSetChanged()
                     }
             }
@@ -125,52 +125,168 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
                 .collection("events")
                 .document(dataSet[iPosition].getEventId())
                 .collection("shopping")
-                .document(dataSet[iPosition].getId()).update(shoppingItemData as Map<String, Any>).addOnSuccessListener {
-                    if(globalUserInformations.containsKey(currentUserId) && null != globalUserInformations[currentUserId]!!.mUri) {
-                        iViewHolder.profilePictureImageView.animate().rotation(iViewHolder.profilePictureImageView.rotation+360.0f).withEndAction {
-                            Glide.with(iViewHolder.itemView.context).load(globalUserInformations[currentUserId]!!.mUri).into(iViewHolder.profilePictureImageView)
-                        }
-                    }
-                    else {
-                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                            .child("profileImages")
-                            .child("$currentUserId.jpeg")
-                        storageRef.downloadUrl.addOnSuccessListener {
-                            iViewHolder.profilePictureImageView.animate().rotation(iViewHolder.profilePictureImageView.rotation+360.0f).withEndAction {
-                                Glide.with(iViewHolder.itemView.context).load(it).into(iViewHolder.profilePictureImageView)
+                .document(dataSet[iPosition].getId()).update(shoppingItemData as Map<String, Any>)
+                .addOnSuccessListener {
+                    if (userCacheInformation.containsKey(currentUserId)) {
+                        iViewHolder.profilePictureImageView.animate()
+                            .rotation(iViewHolder.profilePictureImageView.rotation + 360.0f)
+                            .withEndAction {
+                                Glide.with(iViewHolder.itemView.context)
+                                    .load(userCacheInformation[currentUserId]!!.uri)
+                                    .into(iViewHolder.profilePictureImageView)
                             }
-                            if(globalUserInformations.containsKey(currentUserId)) {
-                                globalUserInformations[currentUserId]!!.mUri = it
+                    } else {
+                        FirebaseFirestore.getInstance().collection("users")
+                            .document(currentUserId).get().addOnSuccessListener { doc ->
+                                if (doc.exists()) {
+                                    val userCache = MainActivity.Companion.UserInformation()
+                                    userCache.displayName = doc["displayName"].toString()
+                                    userCache.identifiant = doc["identifiant"].toString()
+                                    userCache.notificationToken =
+                                        doc["notificationToken"].toString()
+                                    val storageRef: StorageReference =
+                                        FirebaseStorage.getInstance().reference
+                                            .child("profileImages")
+                                            .child("$currentUserId.jpeg")
+                                    storageRef.downloadUrl.addOnSuccessListener {
+                                        iViewHolder.profilePictureImageView.animate()
+                                            .rotation(iViewHolder.profilePictureImageView.rotation + 360.0f)
+                                            .withEndAction {
+                                                Glide.with(iViewHolder.itemView.context).load(it)
+                                                    .into(iViewHolder.profilePictureImageView)
+                                            }
+                                        userCache.uri = it
+                                    }
+                                    userCacheInformation[currentUserId] = userCache
+                                }
                             }
-                        }
                     }
                 }
 
 
-            val bCache = globalUserInformations.containsKey(iViewHolder.ownerId)
-            if(bCache) {
+            if (userCacheInformation.containsKey(currentUserId)) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    iViewHolder.profilePictureImageView.tooltipText = globalUserInformations[iViewHolder.ownerId]!!.mDisplayName
-                    iViewHolder.identifiantTextView.text = globalUserInformations[iViewHolder.ownerId]!!.mUniqueId
+                    iViewHolder.profilePictureImageView.tooltipText =
+                        userCacheInformation[iViewHolder.ownerId]!!.displayName
+                }
+                iViewHolder.identifiantTextView.text =
+                    userCacheInformation[iViewHolder.ownerId]!!.identifiant
+
+                // Notification to the organizer
+                if (userCacheInformation.containsKey(iViewHolder.eventOrganizerId)) {
+                    val notification =
+                        FirebaseNotificationSender(
+                            userCacheInformation[iViewHolder.eventOrganizerId]!!.notificationToken,
+                            iViewHolder.eventName,
+                            userCacheInformation[currentUserId]!!.displayName + " s'occupe de " + iViewHolder.nameTextView.text,
+                            iViewHolder.itemView.context as Activity
+                        )
+                    notification.SendNotification()
                 }
                 else {
-                    FirebaseFirestore.getInstance().collection("users").document(iViewHolder.ownerId).get().addOnSuccessListener { doc ->
-                        val newUserRetrieved = MainActivity.Companion.UserInformation()
-                        newUserRetrieved.mDisplayName = doc["displayName"].toString()
-                        newUserRetrieved.mUniqueId = doc["uniquePseudo"].toString()
-                        globalUserInformations[iViewHolder.ownerId] = newUserRetrieved
-                        iViewHolder.identifiantTextView.text = globalUserInformations[iViewHolder.ownerId]!!.mUniqueId
-                    }
+                    val organizerId = iViewHolder.eventOrganizerId
+                    FirebaseFirestore.getInstance().collection("users")
+                        .document(organizerId).get().addOnSuccessListener { doc ->
+                            if(doc.exists()) {
+                                Log.i("Database request", "User retrieved in EventShoppingListAdapter::switchOwner - "+doc.id)
+                                val userCache = MainActivity.Companion.UserInformation()
+                                userCache.displayName = doc["displayName"].toString()
+                                userCache.identifiant = doc["identifiant"].toString()
+                                userCache.notificationToken = doc["notificationToken"].toString()
+
+                                val notification =
+                                    FirebaseNotificationSender(
+                                        userCache.notificationToken,
+                                        iViewHolder.eventName,
+                                        userCache.displayName + " s'occupe de " + iViewHolder.nameTextView.text,
+                                        iViewHolder.itemView.context as Activity
+                                    )
+                                notification.SendNotification()
+
+                                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                    .child("profileImages")
+                                    .child("$organizerId.jpeg")
+                                storageRef.downloadUrl.addOnSuccessListener {
+                                    userCache.uri = it
+                                }
+                                userCacheInformation[organizerId] = userCache
+                            }
+                        }
                 }
             }
             else {
-                FirebaseFirestore.getInstance().collection("users").document(iViewHolder.ownerId).get().addOnSuccessListener { doc ->
-                    val newUserRetrieved = MainActivity.Companion.UserInformation()
-                    newUserRetrieved.mDisplayName = doc["displayName"].toString()
-                    newUserRetrieved.mUniqueId = doc["uniquePseudo"].toString()
-                    globalUserInformations[iViewHolder.ownerId] = newUserRetrieved
-                    iViewHolder.identifiantTextView.text = globalUserInformations[iViewHolder.ownerId]!!.mUniqueId
-                }
+                FirebaseFirestore.getInstance().collection("users")
+                    .document(currentUserId).get().addOnSuccessListener { doc ->
+                        if(doc.exists()) {
+                            Log.i("Database request", "User retrieved in EventShoppingListAdapter::switchOwner - "+doc.id)
+                            val userCache = MainActivity.Companion.UserInformation()
+                            userCache.displayName = doc["displayName"].toString()
+                            userCache.identifiant = doc["identifiant"].toString()
+                            userCache.notificationToken = doc["notificationToken"].toString()
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                iViewHolder.profilePictureImageView.tooltipText = userCache.displayName
+                            }
+                            iViewHolder.identifiantTextView.text = userCache.identifiant
+                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                .child("profileImages")
+                                .child("$currentUserId.jpeg")
+                            storageRef.downloadUrl.addOnSuccessListener {
+                                userCache.uri = it
+                            }
+                            userCacheInformation[currentUserId] = userCache
+
+                            // Notification to the organizer
+                            if(currentUserId != iViewHolder.eventOrganizerId) {
+                                if (userCacheInformation.containsKey(iViewHolder.eventOrganizerId)) {
+                                    val notification =
+                                        FirebaseNotificationSender(
+                                            userCacheInformation[iViewHolder.eventOrganizerId]!!.notificationToken,
+                                            iViewHolder.eventName,
+                                            userCacheInformation[currentUserId]!!.displayName + " s'occupe de " + iViewHolder.nameTextView.text,
+                                            iViewHolder.itemView.context as Activity
+                                        )
+                                    notification.SendNotification()
+                                } else {
+                                    val organizerId = iViewHolder.eventOrganizerId
+                                    FirebaseFirestore.getInstance().collection("users")
+                                        .document(organizerId).get().addOnSuccessListener { doc1 ->
+                                            if (doc1.exists()) {
+                                                Log.i(
+                                                    "Database request",
+                                                    "User retrieved in EventShoppingListAdapter::switchOwner - " + doc1.id
+                                                )
+                                                val userCache1 =
+                                                    MainActivity.Companion.UserInformation()
+                                                userCache1.displayName =
+                                                    doc1["displayName"].toString()
+                                                userCache1.identifiant =
+                                                    doc1["identifiant"].toString()
+                                                userCache1.notificationToken =
+                                                    doc1["notificationToken"].toString()
+
+                                                val notification =
+                                                    FirebaseNotificationSender(
+                                                        userCache1.notificationToken,
+                                                        iViewHolder.eventName,
+                                                        userCache1.displayName + " s'occupe de " + iViewHolder.nameTextView.text,
+                                                        iViewHolder.itemView.context as Activity
+                                                    )
+                                                notification.SendNotification()
+
+                                                val storageRef1: StorageReference =
+                                                    FirebaseStorage.getInstance().reference
+                                                        .child("profileImages")
+                                                        .child("$organizerId.jpeg")
+                                                storageRef1.downloadUrl.addOnSuccessListener {
+                                                    userCache1.uri = it
+                                                }
+                                                userCacheInformation[organizerId] = userCache1
+                                            }
+                                        }
+                                }
+                            }
+                        }
+                    }
             }
         }
         else if(currentUserId ==  iViewHolder.ownerId) {
@@ -187,6 +303,62 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
                         iViewHolder.identifiantTextView.text = iViewHolder.itemView.context.getString(R.string.touche_to_take)
                     }
                 }
+
+            // Notification to the organizer
+            if(currentUserId != iViewHolder.eventOrganizerId) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    iViewHolder.profilePictureImageView.tooltipText =
+                        userCacheInformation[iViewHolder.ownerId]!!.displayName
+                }
+                iViewHolder.identifiantTextView.text =
+                    userCacheInformation[iViewHolder.ownerId]!!.identifiant
+
+                // Notification to the organizer
+                if (userCacheInformation.containsKey(iViewHolder.eventOrganizerId)) {
+                    val notification =
+                        FirebaseNotificationSender(
+                            userCacheInformation[iViewHolder.eventOrganizerId]!!.notificationToken,
+                            iViewHolder.eventName,
+                            userCacheInformation[currentUserId]!!.displayName + " ne s'occupe plus de " + iViewHolder.nameTextView.text,
+                            iViewHolder.itemView.context as Activity
+                        )
+                    notification.SendNotification()
+                } else {
+                    val organizerId = iViewHolder.eventOrganizerId
+                    FirebaseFirestore.getInstance().collection("users")
+                        .document(organizerId).get().addOnSuccessListener { doc ->
+                            if (doc.exists()) {
+                                Log.i(
+                                    "Database request",
+                                    "User retrieved in EventShoppingListAdapter::switchOwner - " + doc.id
+                                )
+                                val userCache = MainActivity.Companion.UserInformation()
+                                userCache.displayName = doc["displayName"].toString()
+                                userCache.identifiant = doc["identifiant"].toString()
+                                userCache.notificationToken =
+                                    doc["notificationToken"].toString()
+
+                                val notification =
+                                    FirebaseNotificationSender(
+                                        userCache.notificationToken,
+                                        iViewHolder.eventName,
+                                        userCache.displayName + " ne s'occupe plus de " + iViewHolder.nameTextView.text,
+                                        iViewHolder.itemView.context as Activity
+                                    )
+                                notification.SendNotification()
+
+                                val storageRef: StorageReference =
+                                    FirebaseStorage.getInstance().reference
+                                        .child("profileImages")
+                                        .child("$organizerId.jpeg")
+                                storageRef.downloadUrl.addOnSuccessListener {
+                                    userCache.uri = it
+                                }
+                                userCacheInformation[organizerId] = userCache
+                            }
+                        }
+                }
+            }
         }
     }
 

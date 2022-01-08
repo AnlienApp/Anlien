@@ -10,7 +10,6 @@ import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.SignInButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -20,19 +19,20 @@ import android.util.Log
 import android.view.Window
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.FirebaseUserMetadata
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 import android.text.InputFilter
 import android.text.InputFilter.AllCaps
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import kotlin.collections.HashMap
 
 
@@ -55,12 +55,24 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Contains a cache list of all users already retrieved.
      */
     companion object {
-        var globalUserInformations = HashMap<String, UserInformation>()
+        var userCacheInformation = HashMap<String, UserInformation>()
 
         class UserInformation {
-            var mDisplayName = ""
-            var mUniqueId = ""
-            var mUri: Uri? = null
+            var displayName = ""
+            var identifiant = ""
+            var notificationToken = ""
+            var uri: Uri? = null
+        }
+
+        /**
+         * Retrieve the current user and update the messaging token for notifications
+         */
+        fun updateCurrentUserMessagingToken(iToken: String) {
+            if(FirebaseAuth.getInstance().currentUser != null) {
+                FirebaseFirestore.getInstance().collection("users")
+                    .document(FirebaseAuth.getInstance().currentUser!!.uid)
+                    .update("notificationToken", iToken)
+            }
         }
     }
 
@@ -144,13 +156,32 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if(null != currentUser) {
             val userInformation = hashMapOf(
                 "displayName" to currentUser.displayName,
-                "uniquePseudo" to ""
+                "identifiant" to "",
+                "notificationToken" to ""
             )
             val db = FirebaseFirestore.getInstance()
+            db.collection("users").document(currentUser.uid).get().addOnSuccessListener { doc->
+                Log.i("Database request", "User retrieved in MainActivity::checkCurrentUser - "+doc.id)
+                if(doc.exists()) {
+                    if(doc["identifiant"] != "") {
+                        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                            updateCurrentUserMessagingToken(token)
+                        }
 
-            db.collection("users").document(currentUser.uid).get().addOnSuccessListener {
-                if(it.exists()) {
-                    if(it["uniquePseudo"] != "") {
+                        val userCache = UserInformation()
+                        userCache.displayName = doc["displayName"] as String
+                        userCache.identifiant = doc["identifiant"] as String
+                        userCache.notificationToken = doc["notificationToken"] as String
+
+                        val userId = currentUser.uid
+                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                            .child("profileImages")
+                            .child("$userId.jpeg")
+                        storageRef.downloadUrl.addOnSuccessListener {
+                            userCache.uri = it
+                        }
+                        userCacheInformation[userId] = userCache
+
                         startActivity(Intent(this, HomepageActivity::class.java))
                     }
                     else {
@@ -199,27 +230,28 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 timer.schedule(
                     object : TimerTask() {
                         override fun run() {
-                            db.collection("users").whereEqualTo("uniquePseudo", it.toString())
+                            db.collection("users").whereEqualTo("identifiant", it.toString())
                                 .get().addOnSuccessListener { documents ->
-                                if (documents.size() > 0) {
-                                    valid.animate().alpha(0F).withEndAction {
-                                        valid.visibility = View.GONE
-                                    }.start()
-                                    warning.animate().alpha(0F).withEndAction {
-                                        warning.visibility = View.INVISIBLE
-                                    }.start()
-                                    wrong.visibility = View.VISIBLE
-                                    wrong.animate().alpha(1F).rotation(wrong.rotation+360F).start()
-                                } else {
-                                    wrong.animate().alpha(0F).withEndAction {
-                                        wrong.visibility = View.GONE
-                                    }.start()
-                                    warning.animate().alpha(0F).withEndAction {
-                                        warning.visibility = View.INVISIBLE
-                                    }.start()
-                                    valid.visibility = View.VISIBLE
-                                    valid.animate().alpha(1F).rotation(valid.rotation+360F).start()
-                                }
+                                    Log.i("Database request", "Filtered user list retrieved in MainActivity::displayPseudoCreation")
+                                    if (documents.size() > 0) {
+                                        valid.animate().alpha(0F).withEndAction {
+                                            valid.visibility = View.GONE
+                                        }.start()
+                                        warning.animate().alpha(0F).withEndAction {
+                                            warning.visibility = View.INVISIBLE
+                                        }.start()
+                                        wrong.visibility = View.VISIBLE
+                                        wrong.animate().alpha(1F).rotation(wrong.rotation+360F).start()
+                                    } else {
+                                        wrong.animate().alpha(0F).withEndAction {
+                                            wrong.visibility = View.GONE
+                                        }.start()
+                                        warning.animate().alpha(0F).withEndAction {
+                                            warning.visibility = View.INVISIBLE
+                                        }.start()
+                                        valid.visibility = View.VISIBLE
+                                        valid.animate().alpha(1F).rotation(valid.rotation+360F).start()
+                                    }
                             }.addOnFailureListener {
                                 wrong.animate().alpha(0F).withEndAction {
                                     wrong.visibility = View.GONE
@@ -240,7 +272,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         valid.setOnClickListener {
             val newText = pseudoEditText.text.toString()
             val userId = mAuth!!.currentUser!!.uid
-            db.collection("users").document(userId).update("uniquePseudo", newText).addOnSuccessListener {
+            db.collection("users").document(userId).update("identifiant", newText).addOnSuccessListener {
                 checkCurrentUser()
             }
         }

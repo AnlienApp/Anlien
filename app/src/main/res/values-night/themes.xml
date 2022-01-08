@@ -3,6 +3,7 @@
     <style name="Theme.Anlien" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/background</item>
+        <item name="colorAccent">@color/background</item>
         <item name="colorPrimaryVariant">@color/background</item>
         <item name="colorOnPrimary">@color/background</item>
         <!-- Secondary brand color. -->
@@ -26,6 +27,15 @@
         <!-- just override the colors used in the default style -->
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimary">@color/background</item>
+    </style>
+
+    <style name="TimePickerTheme" parent="Theme.AppCompat.Light.Dialog">
+
+        <item name="colorPrimary">@color/background</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
     </style>
 
 </resources>

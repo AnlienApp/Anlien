@@ -138,21 +138,58 @@
                     app:layout_constraintStart_toStartOf="@+id/date"
                     app:layout_constraintTop_toBottomOf="@+id/date" />
 
-                <EditText
-                    android:id="@+id/address"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/address_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="20dp"
-                    android:background="@drawable/round_corner_small"
-                    android:gravity="center"
-                    android:hint="@string/event_address"
-                    android:inputType="textVisiblePassword|textNoSuggestions"
-                    android:padding="10dp"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:backgroundTint="?android:attr/textColorSecondary"
-                    android:textSize="20sp"
-                    app:layout_constraintTop_toBottomOf="@+id/hour"
-                    tools:layout_editor_absoluteX="15dp" />
+                    android:layout_marginTop="20dp"
+                    android:layout_marginLeft="20dp"
+                    app:layout_constraintTop_toBottomOf="@+id/hour">
+
+                    <ImageView
+                        android:id="@+id/address_google"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        android:background="@drawable/circular_image_background"
+                        android:backgroundTint="?android:attr/colorAccent"
+                        android:padding="5dp"
+                        android:layout_marginEnd="5dp"
+                        android:src="@drawable/ic_place"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/address"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <EditText
+                        android:id="@+id/address"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/round_corner_small"
+                        android:layout_marginEnd="60dp"
+                        android:layout_marginStart="40dp"
+                        android:padding="10dp"
+                        android:inputType="textVisiblePassword|textNoSuggestions"
+                        android:backgroundTint="?android:attr/textColorSecondary"
+                        android:hint="@string/event_address"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp"
+                        tools:layout_editor_absoluteX="15dp"
+                        tools:ignore="MissingConstraints" />
+
+                    <ImageView
+                        android:id="@+id/go_to_map"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        android:layout_marginStart="5dp"
+                        android:src="@drawable/ic_map"
+                        android:padding="5dp"
+                        android:background="@drawable/circular_image_background"
+                        android:backgroundTint="?android:attr/colorAccent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/address"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <EditText
                     android:id="@+id/description"
@@ -162,7 +199,7 @@
                     android:background="@drawable/round_corner_small"
                     android:gravity="top|left"
                     android:hint="@string/description"
-                    android:inputType="textVisiblePassword|textNoSuggestions"
+                    android:inputType="textVisiblePassword|textNoSuggestions|textMultiLine"
                     android:maxLines="5"
                     android:minHeight="150dp"
                     android:padding="10dp"
@@ -171,7 +208,7 @@
                     android:textSize="20sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/address" />
+                    app:layout_constraintTop_toBottomOf="@+id/address_layout" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -528,26 +565,26 @@
         <EditText
             android:id="@+id/message_input"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_marginStart="15dp"
             android:layout_marginEnd="70dp"
             android:layout_marginTop="20dp"
             android:layout_marginBottom="20dp"
-            android:inputType="textMultiLine"
             android:background="@drawable/round_corner"
             android:backgroundTint="?android:attr/textColorSecondary"
             android:textColor="?android:attr/textColorPrimary"
             android:hint="@string/send_message"
             android:paddingStart="20dp"
-            android:paddingEnd="10dp"
-            android:textAlignment="textStart"
+            android:paddingEnd="20dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:textSize="18sp" />
 
         <androidx.cardview.widget.CardView
             android:id="@+id/send_message_button"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="43dp"
+            android:layout_height="43dp"
             android:layout_toEndOf="@+id/message_input"
             android:layout_marginStart="-60dp"
             android:layout_marginBottom="20dp"

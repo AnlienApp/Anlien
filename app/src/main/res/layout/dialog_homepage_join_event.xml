@@ -88,6 +88,6 @@ android:background="@drawable/round_corner">
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/event_organizer_name"
-        app:srcCompat="@drawable/explore" />
+        app:srcCompat="@drawable/ic_join_event" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

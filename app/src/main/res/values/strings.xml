@@ -45,7 +45,6 @@
     <string name="delete">Supprimer</string>
     <string name="are_you_sure">Etes-vous sûr(e)?</string>
     <string name="yes">Oui</string>
-    <string name="friend_limit">Vous avez atteint la limite d\'amis</string>
     <string name="alone_in_event">Vous êtes le seul à participer à l\'activité</string>
     <string name="touch_to_add_friend">Toucher pour ajouter des amis</string>
     <string name="event_update_success">Activité mise à jour avec succès</string>
@@ -58,4 +57,13 @@
     <string name="enter_identifiant">Entrez un identifiant</string>
     <string name="for_me">Je m\'en occupe !</string>
     <string name="not_for_me">Je ne m\'en occupe pas</string>
+    <string name="back_icon">back icon</string>
+    <string name="create_button">create_button</string>
+    <string name="add_participant">add participant</string>
+    <string name="participant_list_edition">participant list edition</string>
+    <string name="default_notification_channel_string">channel notification</string>
+    <string name="not_friend">Vous n\'êtes pas amis</string>
+    <string name="address_modification_forbiden">Vous ne pouvez pas modifier l\'adresse</string>
+    <string name="not_event_qr_code">Ce QR n\'est pas celui d\'un évènement valide</string>
+    <string name="not_valid_qr_code">Ce n\'est pas un QR valide</string>
 </resources>

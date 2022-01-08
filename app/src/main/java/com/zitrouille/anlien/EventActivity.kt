@@ -1,16 +1,24 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
+import android.app.Activity
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
+import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -19,6 +27,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.baoyz.widget.PullRefreshLayout
 import com.bumptech.glide.Glide
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -29,10 +41,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import android.widget.LinearLayout
 
 class EventActivity : AppCompatActivity() {
 
@@ -44,6 +57,14 @@ class EventActivity : AppCompatActivity() {
 
     private var mCurrentDateInMillis = 0L
     private var mStartDateInMillis = 0L
+
+    private var mEventTitle = ""
+    private var mPlaceId = ""
+    private var mPlaceLatitude = 0.0
+    private var mPlaceLongitude = 0.0
+    private var mLock = false
+
+    private var mOrganizerNotificationToken = ""
 
     private var mCurrentUserId: String? = ""
     private var mDatabase: FirebaseFirestore? = null
@@ -102,6 +123,7 @@ class EventActivity : AppCompatActivity() {
             }
         initializeBottomNavigation()
         initializeSwipeRefresh()
+        initMapIcon()
     }
 
     /**
@@ -133,6 +155,86 @@ class EventActivity : AppCompatActivity() {
         checkCurrentUser()
         initChat()
         initChatSnapshotListener()
+    }
+
+    /**
+     * At the right position of the adress, creator of the event can click on the icon
+     * to modify the adresse with google adress.
+     * For participant, this button has a different icon and open google map to create travel
+     * If the adresse was not define, with the google place API, the button is not available for
+     * participant.
+     */
+    private fun initMapIcon() {
+        val mapButton = findViewById<ImageView>(R.id.go_to_map)
+        val addressButton = findViewById<ImageView>(R.id.address_google)
+        if(bOrganizer) {
+            var bEditedByAutoComple = false
+            val result = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+                if(Activity.RESULT_OK == result.resultCode) {
+                    result.data?.let {
+                        val place = Autocomplete.getPlaceFromIntent(result.data)
+                        bEditedByAutoComple = true
+                        findViewById<EditText>(R.id.address).setText(place.name)
+                        mPlaceId = place.id
+                        mPlaceLatitude = place.latLng.latitude
+                        mPlaceLongitude = place.latLng.longitude
+                        bEditedByAutoComple = false
+                    }
+                }
+            }
+            addressButton.setOnClickListener {
+                Places.initialize(applicationContext, "AIzaSyDx1OzT1RsMRkbBAHHmDAb6z_gPKGrK-LI")
+                val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
+                val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                    .build(this)
+                result.launch(intent)
+            }
+            findViewById<EditText>(R.id.address).addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable) {
+                    if(!bEditedByAutoComple) {
+                        mPlaceId = ""
+                        mPlaceLatitude = 0.0
+                        mPlaceLongitude = 0.0
+                    }
+                }
+                override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            })
+        }
+        else {
+            addressButton.setOnClickListener {
+                Toast.makeText(applicationContext, getString(R.string.address_modification_forbiden), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        mapButton.setOnClickListener {
+            if(mPlaceId.isNotBlank() && mPlaceId.isNotEmpty()) {
+                try {
+                    // Launch Waze if it exists
+                    val url = "https://waze.com/ul?q=66%20Acacia%20Avenue&ll=$mPlaceLatitude,$mPlaceLongitude&navigate=yes"
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                } catch (ex: ActivityNotFoundException) {
+                    try {
+                        // Try to start google map
+                        val gmmIntentUri = Uri.parse("google.navigation:q=$mPlaceLatitude,$mPlaceLongitude")
+                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                        mapIntent.setPackage("com.google.android.apps.maps")
+                        startActivity(mapIntent)
+                    } catch (ex2: ActivityNotFoundException) {
+                        Toast.makeText(applicationContext, "Aucune application GPS n'a pu être lancée", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            else {
+                Toast.makeText(
+                    applicationContext,
+                    "La géolocalisation n'est pas disponible pour cet évènement",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+        }
     }
 
     /**
@@ -245,95 +347,81 @@ class EventActivity : AppCompatActivity() {
                 presentButton.animate().alpha(0.9f).start()
                 questionButton.animate().alpha(0.3f).start()
                 cancelButton.animate().alpha(0.3f).start()
-
-                mPresence = true
-                mStatus = 0L
-
-                val data = hashMapOf(
-                    "status" to 0L,
-                )
-                FirebaseFirestore.getInstance()
-                    .collection("events")
-                    .document(mEventId)
-                    .collection("participants")
-                    .whereEqualTo("userId", mCurrentUserId).get().addOnSuccessListener { docs ->
-                        for(doc in docs) {
-                            if(null == doc) {
-                                continue
-                            }
-                            FirebaseFirestore.getInstance()
-                                .collection("events")
-                                .document(mEventId)
-                                .collection("participants")
-                                .document(doc.id).update(data as Map<String, Any>).addOnSuccessListener {
-                                    Toast.makeText(applicationContext, getString(R.string.member_of_event), Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                    }
+                updatePresence(0L)
             }
             questionButton.setOnClickListener {
                 presentButton.animate().alpha(0.3f).start()
                 questionButton.animate().alpha(0.9f).start()
                 cancelButton.animate().alpha(0.3f).start()
-
-                mPresence = false
-                mStatus = 1L
-
-                val data = hashMapOf(
-                    "status" to 1L,
-                )
-                FirebaseFirestore.getInstance()
-                    .collection("events")
-                    .document(mEventId)
-                    .collection("participants")
-                    .whereEqualTo("userId", mCurrentUserId).get().addOnSuccessListener { docs ->
-                        for(doc in docs) {
-                            if(null == doc) {
-                                continue
-                            }
-                            FirebaseFirestore.getInstance()
-                                .collection("events")
-                                .document(mEventId)
-                                .collection("participants")
-                                .document(doc.id).update(data as Map<String, Any>).addOnSuccessListener {
-                                    Toast.makeText(applicationContext, getString(R.string.not_member_of_event), Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                    }
+                updatePresence(1L)
             }
             cancelButton.setOnClickListener {
                 presentButton.animate().alpha(0.3f).start()
                 questionButton.animate().alpha(0.3f).start()
                 cancelButton.animate().alpha(0.9f).start()
-
-                mPresence = false
-                mStatus = 2L
-
-                val data = hashMapOf(
-                    "status" to 2L,
-                )
-                FirebaseFirestore.getInstance()
-                    .collection("events")
-                    .document(mEventId)
-                    .collection("participants")
-                    .whereEqualTo("userId", mCurrentUserId).get().addOnSuccessListener { docs ->
-                        for(doc in docs) {
-                            if(null == doc) {
-                                continue
-                            }
-                            FirebaseFirestore.getInstance()
-                                .collection("events")
-                                .document(mEventId)
-                                .collection("participants")
-                                .document(doc.id).update(data as Map<String, Any>).addOnSuccessListener {
-                                    Toast.makeText(applicationContext, getString(R.string.not_member_of_event), Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                    }
+                updatePresence(2L)
             }
         }
-
         retrieveEventInformation()
+    }
+
+    private fun updatePresence(iPresence: Long) {
+        mStatus = iPresence
+        mPresence = false
+        if(0L == iPresence) {
+            mPresence = true
+        }
+
+        val data = hashMapOf(
+            "status" to iPresence,
+        )
+        FirebaseFirestore.getInstance()
+            .collection("events")
+            .document(mEventId)
+            .collection("participants")
+            .whereEqualTo("userId", mCurrentUserId).get().addOnSuccessListener { docs ->
+                for(doc in docs) {
+                    if(null == doc) {
+                        continue
+                    }
+                    FirebaseFirestore.getInstance()
+                        .collection("events")
+                        .document(mEventId)
+                        .collection("participants")
+                        .document(doc.id).update(data as Map<String, Any>).addOnSuccessListener {
+                            if(0L == iPresence) {
+                                Toast.makeText(
+                                    applicationContext,
+                                    getString(R.string.member_of_event),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                val notification =
+                                    FirebaseNotificationSender(
+                                        mOrganizerNotificationToken,
+                                        "Invitation acceptée",
+                                        userCacheInformation[mCurrentUserId]!!.displayName + " participe à l'évènement " + mEventTitle,
+                                        this
+                                    )
+                                notification.SendNotification()
+                            }
+                            else {
+                                 Toast.makeText(
+                                    applicationContext,
+                                    getString(R.string.not_member_of_event),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                val notification =
+                                    FirebaseNotificationSender(
+                                        mOrganizerNotificationToken,
+                                        "Invitation refusée",
+                                        userCacheInformation[mCurrentUserId]!!.displayName + " ne participe pas à l'évènement " + mEventTitle,
+                                        this
+                                    )
+                                notification.SendNotification()
+                            }
+                        }
+                }
+            }
     }
 
     private fun displayParticipantPage() {
@@ -459,13 +547,28 @@ class EventActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.discussion)
     }
 
-    @SuppressLint("SetTextI18n", "CutPasteId")
+    @SuppressLint("SetTextI18n", "CutPasteId", "SimpleDateFormat")
     private fun retrieveEventInformation() {
         FirebaseFirestore.getInstance()
             .collection("events")
             .document(mEventId).get().addOnSuccessListener { doc ->
                 if(null != doc) {
-                    findViewById<EditText>(R.id.title).setText(doc["title"].toString())
+
+                    if(doc.contains("placeId")) {
+                        mPlaceId = doc["placeId"].toString()
+                        mPlaceLatitude = doc["latitude"] as Double
+                        mPlaceLongitude = doc["longitude"] as Double
+                    }
+
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(intent.extras!!["organizerId"].toString())
+                        .get().addOnSuccessListener { organizerData ->
+                            mOrganizerNotificationToken = organizerData["notificationToken"].toString()
+                        }
+
+                    mEventTitle = doc["title"].toString()
+                    findViewById<EditText>(R.id.title).setText(mEventTitle)
                     val newDate: Date = Calendar.getInstance().time //getting date
                     val formatter = SimpleDateFormat("EEEE d MMMM yyyy") //formating according to my need
                     mStartDateInMillis = doc.getLong("date")!!
@@ -502,8 +605,8 @@ class EventActivity : AppCompatActivity() {
 
                         val database = FirebaseFirestore.getInstance()
 
-                        var bLockStatus: Boolean = doc["lock"] as Boolean
-                        if(bLockStatus) {
+                        mLock = doc["lock"] as Boolean
+                        if(mLock) {
                             findViewById<ImageView>(R.id.lock_unlock).setImageDrawable(
                                 ContextCompat.getDrawable(this, R.drawable.lock)
                             )
@@ -514,11 +617,11 @@ class EventActivity : AppCompatActivity() {
                             )
                         }
                         findViewById<ImageView>(R.id.lock_unlock).setOnClickListener {
-                            bLockStatus = !bLockStatus
+                            mLock = !mLock
                             database.collection("events")
                                 .document(mEventId)
-                                .update("lock", bLockStatus).addOnSuccessListener {
-                                    if(bLockStatus) {
+                                .update("lock", mLock).addOnSuccessListener {
+                                    if(mLock) {
                                         findViewById<ImageView>(R.id.lock_unlock).setImageDrawable(
                                             ContextCompat.getDrawable(this, R.drawable.lock)
                                         )
@@ -533,56 +636,64 @@ class EventActivity : AppCompatActivity() {
                             }
 
                         }
-
                         findViewById<ImageView>(R.id.update_button).setOnClickListener {
-                            val currentEventData = hashMapOf(
-                                "title" to findViewById<EditText>(R.id.title).text.toString(),
-                                "address" to findViewById<EditText>(R.id.address).text.toString(),
-                                "lock" to bLockStatus,
-                                "date" to mCurrentDateInMillis,
-                                "hour" to findViewById<TextView>(R.id.hour).text.toString(),
-                                "description" to findViewById<EditText>(R.id.description).text.toString(),
-                                "organizerId" to mCurrentUserId
-                            )
-
-
-                            database.collection("events").document(mEventId).set(currentEventData).addOnSuccessListener {
-                                findViewById<ImageView>(R.id.update_button).animate().rotation(findViewById<ImageView>(R.id.update_button).rotation+360.0f).withEndAction {
-                                    Toast.makeText(applicationContext, getString(R.string.event_update_success), Toast.LENGTH_SHORT).show()
-                                }
-                                if(mStartDateInMillis != mCurrentDateInMillis) {
-                                    database.collection("events")
-                                        .document(mEventId)
-                                        .collection("partipcipants").get()
-                                        .addOnSuccessListener { docs ->
-                                            for (doc in docs) {
-                                                if (null == doc) continue
-                                                database.collection("users")
-                                                    .document(doc["userId"].toString())
-                                                    .collection("events")
-                                                    .whereEqualTo("eventId", mEventId).get()
-                                                    .addOnSuccessListener { docs2 ->
-                                                        for (doc2 in docs2) {
-                                                            if (null == doc2) continue
-                                                            database.collection("users")
-                                                                .document(doc["userId"].toString())
-                                                                .collection("events")
-                                                                .document(doc2.id).update(
-                                                                    "eventDateInMilli",
-                                                                    mCurrentDateInMillis
-                                                                )
-                                                        }
-                                                    }
-                                            }
-                                        }
-                                }
-                            }
+                            updateEvent()
                         }
                     }
                 }
         }
     }
 
+    private fun updateEvent() {
+        val database = FirebaseFirestore.getInstance()
+        val currentEventData = hashMapOf(
+            "title" to findViewById<EditText>(R.id.title).text.toString(),
+            "address" to findViewById<EditText>(R.id.address).text.toString(),
+            "lock" to mLock,
+            "date" to mCurrentDateInMillis,
+            "hour" to findViewById<TextView>(R.id.hour).text.toString(),
+            "placeId" to mPlaceId,
+            "latitude" to mPlaceLatitude,
+            "longitude" to mPlaceLongitude,
+            "description" to findViewById<EditText>(R.id.description).text.toString(),
+            "organizerId" to mCurrentUserId
+        )
+        database.collection("events").document(mEventId).set(currentEventData).addOnSuccessListener {
+            findViewById<ImageView>(R.id.update_button).animate().rotation(findViewById<ImageView>(R.id.update_button).rotation+360.0f).withEndAction {
+                Toast.makeText(applicationContext, getString(R.string.event_update_success), Toast.LENGTH_SHORT).show()
+            }
+            if(mStartDateInMillis != mCurrentDateInMillis) {
+                database.collection("events")
+                    .document(mEventId)
+                    .collection("partipcipants").get()
+                    .addOnSuccessListener { docs1 ->
+                        for (doc1 in docs1) {
+                            if (null == doc1) continue
+                            database.collection("users")
+                                .document(doc1["userId"].toString())
+                                .collection("events")
+                                .whereEqualTo("eventId", mEventId).get()
+                                .addOnSuccessListener { docs2 ->
+                                    for (doc2 in docs2) {
+                                        if (null == doc2) continue
+                                        database.collection("users")
+                                            .document(doc1["userId"].toString())
+                                            .collection("events")
+                                            .document(doc2.id).update(
+                                                "eventDateInMilli",
+                                                mCurrentDateInMillis
+                                            )
+                                    }
+                                }
+                        }
+                    }
+            }
+        }
+    }
+
+    /**
+     * TO remake
+     */
     private fun deleteEvent() {
         val database = FirebaseFirestore.getInstance()
 
@@ -612,55 +723,150 @@ class EventActivity : AppCompatActivity() {
                         .whereEqualTo("eventId", mEventId).get().addOnSuccessListener { userEvents ->
                             for(event in userEvents) {
                                 if(null == event) continue
+
+                                database.collection("events")
+                                    .document(mEventId)
+                                    .collection("participants").document(participant.id).delete()
+
                                 database.collection("users")
                                     .document(participant["userId"].toString())
                                     .collection("events")
                                     .document(event.id).delete().addOnSuccessListener {
                                         if(participant == participants.documents[participants.size()-1] && event == userEvents.documents[userEvents.size()-1]) {
+                                            // Delete shopping list of the event
                                             database.collection("events")
                                                 .document(mEventId)
-                                                .delete().addOnSuccessListener {
-                                                    findViewById<ImageView>(R.id.delete_button).animate().rotation(findViewById<ImageView>(R.id.delete_button).rotation+360.0f).withEndAction {
-                                                        Toast.makeText(applicationContext, getString(R.string.event_delete_success), Toast.LENGTH_SHORT).show()
-                                                        finish()
+                                                .collection("shopping").get().addOnSuccessListener { shoppings ->
+                                                    if(shoppings.documents.size != 0) {
+                                                        for (shopping in shoppings) {
+                                                            shopping.reference.delete()
+                                                            if (shopping == shoppings.documents[shoppings.documents.size - 1]) {
+                                                                // delete messages of the event
+                                                                database.collection("events")
+                                                                    .document(mEventId)
+                                                                    .collection("messages").get()
+                                                                    .addOnSuccessListener { messages ->
+                                                                        if (messages.documents.size != 0) {
+                                                                            for (message in messages) {
+                                                                                message.reference.delete()
+                                                                                if (message == messages.documents[messages.documents.size - 1]) {
+                                                                                    database.collection("events")
+                                                                                        .document(mEventId)
+                                                                                        .delete().addOnSuccessListener {
+                                                                                            findViewById<ImageView>(R.id.delete_button).animate()
+                                                                                                .rotation(
+                                                                                                    findViewById<ImageView>(
+                                                                                                        R.id.delete_button
+                                                                                                    ).rotation + 360.0f
+                                                                                                ).withEndAction {
+                                                                                                    Toast.makeText(
+                                                                                                        applicationContext,
+                                                                                                        getString(R.string.event_delete_success),
+                                                                                                        Toast.LENGTH_SHORT
+                                                                                                    ).show()
+                                                                                                    finish()
+                                                                                                }
+                                                                                        }
+                                                                                }
+                                                                            }
+                                                                        } else {
+                                                                            findViewById<ImageView>(R.id.delete_button).animate()
+                                                                                .rotation(findViewById<ImageView>(R.id.delete_button).rotation + 360.0f)
+                                                                                .withEndAction {
+                                                                                    Toast.makeText(
+                                                                                        applicationContext,
+                                                                                        getString(R.string.event_delete_success),
+                                                                                        Toast.LENGTH_SHORT
+                                                                                    ).show()
+                                                                                    finish()
+                                                                                }
+                                                                        }
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                    else {
+                                                        findViewById<ImageView>(R.id.delete_button).animate()
+                                                            .rotation(findViewById<ImageView>(R.id.delete_button).rotation + 360.0f)
+                                                            .withEndAction {
+                                                                Toast.makeText(
+                                                                    applicationContext,
+                                                                    getString(R.string.event_delete_success),
+                                                                    Toast.LENGTH_SHORT
+                                                                ).show()
+                                                                finish()
+                                                            }
                                                     }
                                                 }
                                         }
                                     }
                             }
-                            database.collection("events")
-                                .document(mEventId)
-                                .collection("participants").document(participant.id).delete()
-
-                            database.collection("events")
-                                .document(mEventId)
-                                .collection("shopping").get().addOnSuccessListener { shoppings ->
-                                    for(shopping in shoppings) {
-                                        database.collection("events")
-                                            .document(mEventId)
-                                            .collection("shopping")
-                                            .document(shopping.id).delete()
-                                    }
-                                }
-                            database.collection("events")
-                                .document(mEventId)
-                                .collection("messages").get().addOnSuccessListener { messages ->
-                                    for(message in messages) {
-                                        database.collection("events")
-                                            .document(mEventId)
-                                            .collection("messages")
-                                            .document(message.id).delete()
-                                    }
-                                }
                     }
                 }
                 if(0 == participants.size()) {
+                    // Delete shopping list of the event
                     database.collection("events")
                         .document(mEventId)
-                        .delete().addOnSuccessListener {
-                            findViewById<ImageView>(R.id.delete_button).animate().rotation(findViewById<ImageView>(R.id.delete_button).rotation+360.0f).withEndAction {
-                                Toast.makeText(applicationContext, getString(R.string.event_delete_success), Toast.LENGTH_SHORT).show()
-                                finish()
+                        .collection("shopping").get().addOnSuccessListener { shoppings ->
+                            if(shoppings.documents.size != 0) {
+                                for (shopping in shoppings) {
+                                    shopping.reference.delete()
+                                    if (shopping == shoppings.documents[shoppings.documents.size - 1]) {
+                                        // delete messages of the event
+                                        database.collection("events")
+                                            .document(mEventId)
+                                            .collection("messages").get()
+                                            .addOnSuccessListener { messages ->
+                                                if (messages.documents.size != 0) {
+                                                    for (message in messages) {
+                                                        message.reference.delete()
+                                                        if (message == messages.documents[messages.documents.size - 1]) {
+                                                            database.collection("events")
+                                                                .document(mEventId)
+                                                                .delete().addOnSuccessListener {
+                                                                    findViewById<ImageView>(R.id.delete_button).animate()
+                                                                        .rotation(
+                                                                            findViewById<ImageView>(
+                                                                                R.id.delete_button
+                                                                            ).rotation + 360.0f
+                                                                        ).withEndAction {
+                                                                            Toast.makeText(
+                                                                                applicationContext,
+                                                                                getString(R.string.event_delete_success),
+                                                                                Toast.LENGTH_SHORT
+                                                                            ).show()
+                                                                            finish()
+                                                                        }
+                                                                }
+                                                        }
+                                                    }
+                                                } else {
+                                                    findViewById<ImageView>(R.id.delete_button).animate()
+                                                        .rotation(findViewById<ImageView>(R.id.delete_button).rotation + 360.0f)
+                                                        .withEndAction {
+                                                            Toast.makeText(
+                                                                applicationContext,
+                                                                getString(R.string.event_delete_success),
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                            finish()
+                                                        }
+                                                }
+                                            }
+                                    }
+                                }
+                            }
+                            else {
+                                findViewById<ImageView>(R.id.delete_button).animate()
+                                    .rotation(findViewById<ImageView>(R.id.delete_button).rotation + 360.0f)
+                                    .withEndAction {
+                                        Toast.makeText(
+                                            applicationContext,
+                                            getString(R.string.event_delete_success),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        finish()
+                                    }
                             }
                         }
                 }
@@ -698,26 +904,6 @@ class EventActivity : AppCompatActivity() {
 
     @SuppressLint("SimpleDateFormat", "SetTextI18n")
     private fun initHourPicker(iView: TextView) {
-        val rightNow = Calendar.getInstance()
-        val currentHourIn24Format = rightNow[Calendar.HOUR_OF_DAY]
-        val currentMinute = rightNow[Calendar.MINUTE]
-
-        if(10 > currentHourIn24Format) {
-            if(10 > currentMinute) {
-                iView.text = "0$currentHourIn24Format : 0$currentMinute"
-            }
-            else {
-                iView.text = "0$currentHourIn24Format : $currentMinute"
-            }
-        }
-        else {
-            if(10 > currentMinute) {
-                iView.text = "$currentHourIn24Format : 0$currentMinute"
-            }
-            else {
-                iView.text = "$currentHourIn24Format : $currentMinute"
-            }
-        }
         // Display hour picker
         iView.setOnClickListener {
             displayHourPicker(iView)
@@ -734,6 +920,7 @@ class EventActivity : AppCompatActivity() {
                 .setTimeFormat(TimeFormat.CLOCK_24H)
                 .setHour(currentHourIn24Format)
                 .setMinute(currentMinute)
+                .setTheme(R.style.TimePickerTheme)
                 .setTitleText(getString(R.string.seletect_time))
                 .setInputMode(MaterialTimePicker.INPUT_MODE_KEYBOARD)
                 .build()
@@ -803,6 +990,8 @@ class EventActivity : AppCompatActivity() {
                     if(null == doc) continue
                     shoppingList.add(EventShopping(
                         mEventId,
+                        mEventTitle,
+                        intent.extras!!["organizerId"].toString(),
                         doc.id,
                         doc["name"].toString(),
                         doc["owner"].toString(),
@@ -836,23 +1025,31 @@ class EventActivity : AppCompatActivity() {
         val takeItRoundedImageView = dialog.findViewById<ImageView>(R.id.i_take_it_rounded)
         takeItImageView.setOnClickListener {
             val currentUserId = FirebaseAuth.getInstance().currentUser!!.uid
-            if(globalUserInformations.containsKey(currentUserId) && null != globalUserInformations[currentUserId]!!.mUri) {
-                Glide.with(applicationContext).load(globalUserInformations[currentUserId]!!.mUri).into(takeItRoundedImageView)
+            if(userCacheInformation.containsKey(currentUserId)) {
+                Glide.with(applicationContext).load(userCacheInformation[currentUserId]!!.uri).into(takeItRoundedImageView)
                 takeItRoundedImageView.visibility = View.VISIBLE
                 takeItRoundedImageView.animate().alpha(1.0f).rotation(takeItRoundedImageView.rotation+360.0f)
                 Toast.makeText(dialog.context, getString(R.string.for_me), Toast.LENGTH_SHORT).show()
             }
             else {
-                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                    .child("profileImages")
-                    .child("$currentUserId.jpeg")
-                storageRef.downloadUrl.addOnSuccessListener {
-                    Glide.with(applicationContext).load(it).into(takeItRoundedImageView)
-                    takeItRoundedImageView.visibility = View.VISIBLE
-                    if(globalUserInformations.containsKey(currentUserId)) {
-                        globalUserInformations[currentUserId]!!.mUri = it
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(currentUserId).get().addOnSuccessListener { doc ->
+                        if(doc.exists()) {
+                            val userCache = MainActivity.Companion.UserInformation()
+                            userCache.displayName = doc["displayName"].toString()
+                            userCache.identifiant = doc["identifiant"].toString()
+                            userCache.notificationToken = doc["notificationToken"].toString()
+                            userCacheInformation[currentUserId] = userCache
+                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                                .child("profileImages")
+                                .child("$currentUserId.jpeg")
+                            storageRef.downloadUrl.addOnSuccessListener {
+                                Glide.with(applicationContext).load(it).into(takeItRoundedImageView)
+                                userCache.uri = it
+                            }
+                        }
                     }
-                }
             }
         }
 
@@ -953,7 +1150,8 @@ class EventActivity : AppCompatActivity() {
         recyclerView.adapter = EventChatMessageListAdapter(mMessageArrayList!!)
 
         val messageEditText = findViewById<EditText>(R.id.message_input)
-        messageEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        messageEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        messageEditText.maxLines = 6
 
         val bundle = intent.extras
         if(null != bundle!!.getString("eventId")) {
@@ -1034,13 +1232,14 @@ class EventActivity : AppCompatActivity() {
         mDatabase!!.collection("users")
             .document(mCurrentUserId.toString())
             .collection("friends").get().addOnSuccessListener { documents ->
-
+                Log.i("Database request", "Friend list retrieved in EventActivity::openParticipantSelectionDialog")
                 val recyclerView1 = findViewById<RecyclerView>(R.id.participant_list)
                 var adapter1 : EventParticipantListAdapter? = null
                 if(null != recyclerView1.adapter)
                     adapter1 = recyclerView1.adapter as EventParticipantListAdapter
                 for(doc in documents) {
                     if(null == doc) continue
+                    if(doc["request"] == true) continue
                     val userId = doc.getString("userId").toString()
                     var bIsPresent = false
                     if(null != adapter1)
@@ -1068,6 +1267,7 @@ class EventActivity : AppCompatActivity() {
                     .collection("events")
                     .document(mEventId).collection("participants")
                     .whereEqualTo("userId", participant.getUserId()).get().addOnSuccessListener { docs ->
+                        Log.i("Database request", "Friend list from participant list retrieved in EventActivity::openParticipantSelectionDialog")
                         if(0 == docs.size() && friendStatus) {
                             // At him to the event
                             val participantData = hashMapOf(
@@ -1105,6 +1305,7 @@ class EventActivity : AppCompatActivity() {
                                             .collection("users")
                                             .document(doc["userId"].toString())
                                             .collection("events").whereEqualTo("eventId", mEventId).get().addOnSuccessListener { docs2 ->
+                                                Log.i("Database request", "Friend list retrieved in EventActivity::openParticipantSelectionDialog")
                                                 for(doc2 in docs2) {
                                                     if(null == doc2) continue
                                                     FirebaseFirestore.getInstance()

@@ -40,6 +40,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
         val eventId = iArrayList[iPosition].getEventId()
         FirebaseFirestore.getInstance().collection("events")
             .document(eventId).get().addOnSuccessListener { eventDoc ->
+                Log.i("Database request", "Event retrieved in HomepageEventListAdapter::getView - "+eventDoc.id)
                 view.findViewById<TextView>(R.id.title).text  = eventDoc["title"].toString().substring(0, 1)
                     .uppercase(Locale.getDefault()) + eventDoc["title"].toString().substring(1)
                     .lowercase(Locale.getDefault())
@@ -54,6 +55,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
 
                 FirebaseFirestore.getInstance().collection("events")
                       .document(eventId).collection("participants").get().addOnSuccessListener { participants ->
+                        Log.i("Database request", "Event participant list retrieved in HomepageEventListAdapter::getView")
                         mEventProfileArrayList = null
                         mEventProfileArrayList = ArrayList()
                         mEventProfileArrayList!!.add(HomepageEventProfile(eventDoc["organizerId"].toString())) // Organizer

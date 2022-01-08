@@ -2,6 +2,7 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +12,7 @@ import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zitrouille.anlien.MainActivity.Companion.globalUserInformations
+import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class CreateEventParticipantListAdapter(private val dataSet: ArrayList<CreateEventParticipant>) :
     RecyclerView.Adapter<CreateEventParticipantListAdapter.ViewHolder>() {
@@ -38,37 +39,37 @@ class CreateEventParticipantListAdapter(private val dataSet: ArrayList<CreateEve
         val userId = dataSet[position].getUserId()
 
         // At first, check if the profile picture has been already retrieved
-        if(globalUserInformations.containsKey(userId)) {
-            val uri = globalUserInformations[userId]!!.mUri
-            if(null != uri) {
-                Glide.with(viewHolder.itemView.context).load(uri).into(viewHolder.profilePicture)
-            }
+        if(userCacheInformation.containsKey(userId)) {
+            val uri = userCacheInformation[userId]!!.uri
+            Glide.with(viewHolder.itemView.context).load(uri).into(viewHolder.profilePicture)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                viewHolder.profilePicture.tooltipText = globalUserInformations[userId]!!.mDisplayName
+                viewHolder.profilePicture.tooltipText = userCacheInformation[userId]!!.displayName
             }
         }
         else {
-            // FIREBASE - FIRESTORE | FIRESTORAGE
-            val newUserRetrieved = MainActivity.Companion.UserInformation()
-            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                .child("profileImages")
-                .child("$userId.jpeg")
-            storageRef.downloadUrl.addOnSuccessListener {
-                Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePicture)
-                newUserRetrieved.mUri = it
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(userId).get().addOnSuccessListener { userDocument ->
-                        newUserRetrieved.mDisplayName = userDocument["displayName"].toString()
-                        newUserRetrieved.mUniqueId = userDocument["uniquePseudo"].toString()
-                        viewHolder.profilePicture.tooltipText = newUserRetrieved.mDisplayName
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId).get().addOnSuccessListener { doc ->
+                    Log.i("Database request", "User retrieved in CreateEventParticipantListAdapter::onBindViewHolder - "+doc.id)
+                    if(doc.exists()) {
+                        val userCache = MainActivity.Companion.UserInformation()
+                        userCache.displayName = doc["displayName"].toString()
+                        userCache.identifiant = doc["identifiant"].toString()
+                        userCache.notificationToken = doc["notificationToken"].toString()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            viewHolder.profilePicture.tooltipText = userCache.displayName
+                        }
+                        userCacheInformation[userId] = userCache
+                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                            .child("profileImages")
+                            .child("$userId.jpeg")
+                        storageRef.downloadUrl.addOnSuccessListener {
+                            Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePicture)
+                            userCache.uri = it
+                        }
                     }
-            }
-            globalUserInformations[userId] = newUserRetrieved
+                }
         }
-
     }
 
     // Return the size of your dataset (invoked by the layout manager)

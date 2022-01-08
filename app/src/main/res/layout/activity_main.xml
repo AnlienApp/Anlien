@@ -8,6 +8,7 @@
     tools:context=".MainActivity">
 
     <ImageView
+        android:id="@+id/app_title"
         android:layout_width="285dp"
         android:layout_height="136dp"
         android:layout_marginTop="100dp"
