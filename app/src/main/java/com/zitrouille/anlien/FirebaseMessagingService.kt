@@ -2,7 +2,6 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.app.*
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
@@ -20,14 +19,23 @@ import com.google.firebase.messaging.RemoteMessage
 import com.zitrouille.anlien.MainActivity.Companion.updateCurrentUserMessagingToken
 import org.json.JSONException
 import org.json.JSONObject
+import android.content.ComponentName
+
+import android.app.ActivityManager
+import android.app.ActivityManager.RunningTaskInfo
+
 
 class FirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
 
         remoteMessage.notification?.let {
-            Log.d(TAG, "Message Notification Body: ${it.body}")
-            sendVisualNotification(remoteMessage.notification)
+            val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+            val runningTaskInfo = manager.getRunningTasks(1)
+            val componentInfo = runningTaskInfo[0].topActivity
+            if(componentInfo!!.className != "com.zitrouille.anlien.EventActivity") {
+                sendVisualNotification(remoteMessage.notification)
+            }
         }
 
     }

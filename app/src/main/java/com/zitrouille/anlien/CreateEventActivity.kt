@@ -190,7 +190,7 @@ class CreateEventActivity : AppCompatActivity() {
 
                         val data = hashMapOf(
                             "eventId" to createdEvent.id,
-                            "eventDateInMilli" to mDateInMillis,
+                            "notification" to true
                         )
 
                         // Current user is the organizer of the event, add an entry in his events list.

@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="white_low">#F8F8F8</color>
     <color name="grey">#ECECEC</color>
+    <color name="green">#78A37C</color>
     <color name="light_white">#959595</color>
     <color name="background">#2a3d43</color>
     <color name="background_editText">#243339</color>

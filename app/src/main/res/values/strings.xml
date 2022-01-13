@@ -66,4 +66,14 @@
     <string name="address_modification_forbiden">Vous ne pouvez pas modifier l\'adresse</string>
     <string name="not_event_qr_code">Ce QR n\'est pas celui d\'un évènement valide</string>
     <string name="not_valid_qr_code">Ce n\'est pas un QR valide</string>
+    <string name="help_project">Soutenir le projet</string>
+    <string name="congrats_new_badge">Bravo, vous avez obtenu un nouveau badge !</string>
+    <string name="alpha_user">Alpha testeur</string>
+    <string name="cash">Cagnotte</string>
+    <string name="buys">Courses</string>
+    <string name="info">Info</string>
+    <string name="friends">Friends</string>
+    <string name="home">Home</string>
+    <string name="option">Option</string>
+    <string name="address_description">Adresse description</string>
 </resources>

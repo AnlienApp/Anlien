@@ -2,7 +2,6 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,9 +9,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEventProfile>) :
@@ -25,6 +21,7 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val remainingProfileTextView: TextView = view.findViewById(R.id.remaining_profile)
         val profilePictureImageView: ImageView = view.findViewById(R.id.profile_picture)
+        val badge: ImageView = view.findViewById(R.id.badge)
     }
 
     // Create new views (invoked by the layout manager)
@@ -55,48 +52,21 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
                 if(userCacheInformation.containsKey(userId)) {
                     viewHolder.profilePictureImageView.tooltipText = userCacheInformation[userId]!!.displayName
                 }
-                else {
-                    FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(userId).get().addOnSuccessListener { userDocument ->
-                            Log.i("Database request", "User retrieved in HomepageEventProfileListAdapter::onBindViewHolder - "+userDocument.id)
-                            if(userDocument.exists()) {
-                                val userCache = MainActivity.Companion.UserInformation()
-                                userCache.displayName =
-                                    userDocument["displayName"].toString()
-                                userCache.displayName = userDocument["identifiant"].toString()
-                                viewHolder.profilePictureImageView.tooltipText = userCache.displayName
-                                userCacheInformation[userId] = userCache
-                            }
-                        }
-                }
             }
 
             if(userCacheInformation.containsKey(userId)) {
                 Glide.with(viewHolder.itemView.context).load(userCacheInformation[userId]!!.uri)
                     .into(viewHolder.profilePictureImageView)
+                if("none" != userCacheInformation[userId]!!.displayedBadge)
+                    Glide.with(viewHolder.itemView.context).load(MainActivity.retrieveBadge(userCacheInformation[userId]!!.displayedBadge)).into(viewHolder.badge)
             }
             else {
-                FirebaseFirestore.getInstance().collection("users")
-                    .document(userId).get().addOnSuccessListener { doc ->
-                        Log.i("Database request", "User retrieved in HomepageEventProfileListAdapter::onBindViewHolder - "+doc.id)
-                        if(doc.exists()) {
-                            val userCache = MainActivity.Companion.UserInformation()
-                            userCache.displayName = doc["displayName"].toString()
-                            userCache.identifiant = doc["identifiant"].toString()
-                            userCache.notificationToken = doc["notificationToken"].toString()
-                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                                .child("profileImages")
-                                .child("$userId.jpeg")
-                            storageRef.downloadUrl.addOnSuccessListener {
-                                Glide.with(viewHolder.itemView.context).load(it)
-                                    .into(viewHolder.profilePictureImageView)
-                                userCacheInformation[userId]!!.uri = it
-                                userCache.uri = it
-                            }
-                            userCacheInformation[userId] = userCache
-                        }
-                    }
+                MainActivity.retrieveUserInformation(userId,
+                    null,
+                    null,
+                    viewHolder.profilePictureImageView,
+                    viewHolder.badge
+                )
             }
         }
     }

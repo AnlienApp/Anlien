@@ -18,8 +18,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipant>) :
@@ -31,6 +29,7 @@ class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipan
         val displayNameTextView: TextView = view.findViewById(R.id.name)
         val identifiantTextView: TextView = view.findViewById(R.id.identifiant)
         val profilePictureImageView: ImageView = view.findViewById(R.id.profile_picture)
+        val badge: ImageView = view.findViewById(R.id.badge)
 
         val validImageView: ImageView = view.findViewById(R.id.valid)
         val questionImageView: ImageView = view.findViewById(R.id.question)
@@ -56,29 +55,16 @@ class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipan
             viewHolder.identifiantTextView.text = userCacheInformation[userId]!!.identifiant
             Glide.with(viewHolder.itemView.context).load(userCacheInformation[userId]!!.uri)
                 .into(viewHolder.profilePictureImageView)
+            if("none" != userCacheInformation[userId]!!.displayedBadge)
+                Glide.with(viewHolder.itemView.context).load(MainActivity.retrieveBadge(userCacheInformation[userId]!!.displayedBadge)).into(viewHolder.badge)
         }
         else {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(userId).get().addOnSuccessListener { doc ->
-                    if(doc.exists()) {
-                        val userCache = MainActivity.Companion.UserInformation()
-                        userCache.displayName = doc["displayName"].toString()
-                        userCache.identifiant = doc["identifiant"].toString()
-                        userCache.notificationToken = doc["notificationToken"].toString()
-                        viewHolder.displayNameTextView.text = userCache.displayName
-                        viewHolder.identifiantTextView.text = userCache.identifiant
-                        userCacheInformation[userId] = userCache
-                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                            .child("profileImages")
-                            .child("$userId.jpeg")
-                        storageRef.downloadUrl.addOnSuccessListener {
-                            Glide.with(viewHolder.itemView.context).load(it)
-                                .into(viewHolder.profilePictureImageView)
-                            userCache.uri = it
-                        }
-                    }
-                }
+            MainActivity.retrieveUserInformation(userId,
+                viewHolder.displayNameTextView,
+                viewHolder.identifiantTextView,
+                viewHolder.profilePictureImageView,
+                viewHolder.badge,
+            )
         }
 
         when (dataSet[position].getStatus()) {
@@ -197,26 +183,17 @@ class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipan
 
                 if(userCacheInformation.containsKey(iUserId)) {
                     Glide.with(iContext).load( userCacheInformation[iUserId]!!.uri).into(dialog.findViewById(R.id.profile_picture))
+                    if("none" != userCacheInformation[iUserId]!!.displayedBadge)
+                        Glide.with(iContext).load(MainActivity.retrieveBadge(userCacheInformation[iUserId]!!.displayedBadge)).into(dialog.findViewById(R.id.badge))
+
                 }
                 else {
-                    FirebaseFirestore.getInstance().collection("users")
-                        .document(iUserId).get().addOnSuccessListener { doc1 ->
-                            Log.i("Database request", "User retrieved in EventParticipantListAdapter::displayAddFriendDialog - "+doc1.id)
-                            if(doc1.exists()) {
-                                val userCache = MainActivity.Companion.UserInformation()
-                                userCache.displayName = doc1["displayName"].toString()
-                                userCache.identifiant = doc1["identifiant"].toString()
-                                userCache.notificationToken = doc1["notificationToken"].toString()
-                                val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                                    .child("profileImages")
-                                    .child("$iUserId.jpeg")
-                                storageRef.downloadUrl.addOnSuccessListener {
-                                    Glide.with(iContext).load(it).into(dialog.findViewById(R.id.profile_picture))
-                                    userCache.uri = it
-                                }
-                                userCacheInformation[iUserId] = userCache
-                            }
-                        }
+                    MainActivity.retrieveUserInformation(iUserId,
+                        null,
+                        null,
+                        dialog.findViewById(R.id.profile_picture),
+                        dialog.findViewById(R.id.badge)
+                    )
                 }
 
                 val addFriendImageView = dialog.findViewById(R.id.add_friend) as ImageView

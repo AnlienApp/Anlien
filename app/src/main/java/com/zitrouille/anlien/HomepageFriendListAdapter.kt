@@ -2,7 +2,6 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.os.Build
 import android.util.Log
 import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import android.widget.ArrayAdapter
@@ -13,8 +12,6 @@ import android.widget.ImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.bumptech.glide.Glide
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 
 class HomepageFriendListAdapter(private val iContext : Activity, private val iArrayList: ArrayList<HomepageFriend>):
     ArrayAdapter<HomepageFriend>(iContext, R.layout.item_homepage_friend, iArrayList) {
@@ -31,27 +28,16 @@ class HomepageFriendListAdapter(private val iContext : Activity, private val iAr
          */
         if(userCacheInformation.containsKey(iArrayList[iPosition].getFriendId())) {
             Glide.with(iContext).load(userCacheInformation[iArrayList[iPosition].getFriendId()]!!.uri).into(view.findViewById(R.id.profile_picture))
+            if("none" != userCacheInformation[iArrayList[iPosition].getFriendId()]!!.displayedBadge)
+                Glide.with(iContext).load(MainActivity.retrieveBadge(userCacheInformation[iArrayList[iPosition].getFriendId()]!!.displayedBadge)).into(view.findViewById(R.id.badge))
         }
         else {
-            val userId = iArrayList[iPosition].getFriendId()
-            FirebaseFirestore.getInstance().collection("users")
-                .document(userId).get().addOnSuccessListener { doc ->
-                    if(doc.exists()) {
-                        Log.i("Database request", "User retrieved in HomepageFriendListAdapter::getView - "+doc.id)
-                        val userCache = MainActivity.Companion.UserInformation()
-                        userCache.displayName = doc["displayName"].toString()
-                        userCache.identifiant = doc["identifiant"].toString()
-                        userCache.notificationToken = doc["notificationToken"].toString()
-                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                            .child("profileImages")
-                            .child("$userId.jpeg")
-                        storageRef.downloadUrl.addOnSuccessListener { url ->
-                            userCache.uri = url
-                            Glide.with(iContext).load(url).into(view.findViewById(R.id.profile_picture))
-                        }
-                        userCacheInformation[userId] = userCache
-                    }
-                }
+            MainActivity.retrieveUserInformation(iArrayList[iPosition].getFriendId(),
+                null,
+                null,
+                view.findViewById(R.id.profile_picture),
+                view.findViewById(R.id.badge),
+            )
         }
 
         val user: HomepageFriend = iArrayList[iPosition]

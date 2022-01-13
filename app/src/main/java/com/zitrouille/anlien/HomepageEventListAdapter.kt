@@ -35,6 +35,10 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
         val inflater: LayoutInflater = LayoutInflater.from(iContext)
         val view: View = inflater.inflate(R.layout.item_homepage_event, null)
 
+        if(iArrayList[iPosition].getNotification()) {
+            view.findViewById<ImageView>(R.id.notification).visibility = View.VISIBLE
+        }
+
         mListView.add(view)
 
         val eventId = iArrayList[iPosition].getEventId()
@@ -81,6 +85,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                         view.findViewById<ImageView>(R.id.back_layout).setImageBitmap(generateQRCode(eventId))
 
                         view.setOnClickListener {
+                            view.findViewById<ImageView>(R.id.notification).visibility = View.GONE
                             val intent = Intent(view.context.applicationContext, EventActivity::class.java)
                             intent.putExtra("eventId", eventId)
                             intent.putExtra("organizerId", eventDoc["organizerId"].toString())

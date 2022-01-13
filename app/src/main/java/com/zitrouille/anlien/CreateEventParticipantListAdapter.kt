@@ -2,16 +2,12 @@ package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 
 class CreateEventParticipantListAdapter(private val dataSet: ArrayList<CreateEventParticipant>) :
@@ -23,6 +19,7 @@ class CreateEventParticipantListAdapter(private val dataSet: ArrayList<CreateEve
      */
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val profilePicture: ImageView = view.findViewById(R.id.profile_picture)
+        val badge: ImageView = view.findViewById(R.id.badge)
     }
 
     // Create new views (invoked by the layout manager)
@@ -45,30 +42,16 @@ class CreateEventParticipantListAdapter(private val dataSet: ArrayList<CreateEve
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 viewHolder.profilePicture.tooltipText = userCacheInformation[userId]!!.displayName
             }
+            if("none" != userCacheInformation[userId]!!.displayedBadge)
+                Glide.with(viewHolder.itemView.context).load(MainActivity.retrieveBadge(userCacheInformation[userId]!!.displayedBadge)).into(viewHolder.badge)
         }
         else {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(userId).get().addOnSuccessListener { doc ->
-                    Log.i("Database request", "User retrieved in CreateEventParticipantListAdapter::onBindViewHolder - "+doc.id)
-                    if(doc.exists()) {
-                        val userCache = MainActivity.Companion.UserInformation()
-                        userCache.displayName = doc["displayName"].toString()
-                        userCache.identifiant = doc["identifiant"].toString()
-                        userCache.notificationToken = doc["notificationToken"].toString()
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            viewHolder.profilePicture.tooltipText = userCache.displayName
-                        }
-                        userCacheInformation[userId] = userCache
-                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                            .child("profileImages")
-                            .child("$userId.jpeg")
-                        storageRef.downloadUrl.addOnSuccessListener {
-                            Glide.with(viewHolder.itemView.context).load(it).into(viewHolder.profilePicture)
-                            userCache.uri = it
-                        }
-                    }
-                }
+            MainActivity.retrieveUserInformation(userId,
+                null,
+                null,
+                viewHolder.profilePicture,
+                viewHolder.badge,
+            )
         }
     }
 

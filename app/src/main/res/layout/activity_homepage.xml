@@ -352,7 +352,15 @@
                     android:id="@+id/profile_picture"
                     android:layout_width="150dp"
                     android:layout_height="150dp"
-                    android:background="@drawable/image1"
+                    android:background="@drawable/default_user"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+                <ImageView
+                    android:id="@+id/main_user_badge"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"/>
@@ -411,14 +419,16 @@
                 app:layout_constraintTop_toBottomOf="@+id/userName" />
 
             <TextView
-                android:id="@+id/version"
+                android:id="@+id/help_project"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:alpha="0.5"
-                android:text="1.0.1"
+                android:text="@string/help_project"
                 android:textAlignment="center"
+                android:padding="10dp"
                 android:textColor="?android:attr/textColorPrimary"
-                android:textSize="10sp"
+                android:textSize="20sp"
+                android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 

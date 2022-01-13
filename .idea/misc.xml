@@ -3,10 +3,12 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.3537037037037037" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/circular.xml" value="0.5661458333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/circular_image_background.xml" value="0.3675925925925926" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_circle_add.xml" value="0.5661458333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_delete.xml" value="0.3638888888888889" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_launcher_background.xml" value="0.3537037037037037" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_send.xml" value="0.362962962962963" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_shopping.xml" value="0.3638888888888889" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/image.xml" value="0.48072916666666665" />
@@ -28,6 +30,7 @@
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_homepage_join_event.xml" value="0.4395833333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_main_create_pseudo.xml" value="0.5619791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_main_edit_pseudo.xml" value="0.55" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_new_badge.xml" value="0.5447916666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_create_event_friend.xml" value="0.5619791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_create_event_participant.xml" value="0.4765625" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_event_chat_message.xml" value="0.55" />
@@ -38,10 +41,13 @@
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_event.xml" value="0.46458333333333335" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_event_profile.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_friend.xml" value="0.4" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/notification_badge.xml" value="0.5447916666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/menu/create_event_item_menu.xml" value="0.4119791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/menu/event_item_menu.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/menu/homepage_friend_more_menu.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/menu/homepage_item_menu.xml" value="0.55" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.3537037037037037" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.3537037037037037" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Friends/app/src/main/res/drawable/circular.xml" value="0.4505208333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Friends/app/src/main/res/drawable/ic_home.xml" value="0.4276041666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Friends/app/src/main/res/drawable/image.xml" value="0.4505208333333333" />

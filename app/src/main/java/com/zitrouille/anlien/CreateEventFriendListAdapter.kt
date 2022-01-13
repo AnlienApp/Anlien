@@ -26,6 +26,7 @@ class CreateEventFriendListAdapter(private val dataSet: ArrayList<CreateEventFri
         val displayNameTextView: TextView = view.findViewById(R.id.name)
         val uniqueIdentifiantTextView: TextView = view.findViewById(R.id.identifiant)
         val profilePicture: ImageView = view.findViewById(R.id.profile_picture)
+        val badge: ImageView = view.findViewById(R.id.badge)
 
         val addParticipantImageView: ImageView = view.findViewById(R.id.add_participant)
         val removeParticipantImageView: ImageView = view.findViewById(R.id.remove_participant)
@@ -51,30 +52,16 @@ class CreateEventFriendListAdapter(private val dataSet: ArrayList<CreateEventFri
             viewHolder.uniqueIdentifiantTextView.text = userCacheInformation[userId]!!.identifiant
             Glide.with(viewHolder.itemView.context).load(userCacheInformation[userId]!!.uri)
                 .into(viewHolder.profilePicture)
+            if("none" != userCacheInformation[userId]!!.displayedBadge)
+                Glide.with(viewHolder.itemView.context).load(MainActivity.retrieveBadge(userCacheInformation[userId]!!.displayedBadge)).into(viewHolder.badge)
         }
         else {
-            FirebaseFirestore.getInstance().collection("users")
-                .document(userId).get().addOnSuccessListener { doc ->
-                    Log.i("Database request", "User retrieved in CreateEventFriendListAdapter::onBindViewHolder - "+doc.id)
-                    if(doc.exists()) {
-                        val userCache = MainActivity.Companion.UserInformation()
-                        userCache.displayName = doc["displayName"].toString()
-                        userCache.identifiant = doc["identifiant"].toString()
-                        userCache.notificationToken = doc["notificationToken"].toString()
-
-                        viewHolder.displayNameTextView.text = userCache.displayName
-                        viewHolder.uniqueIdentifiantTextView.text = userCache.identifiant
-                        val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                            .child("profileImages")
-                            .child("$userId.jpeg")
-                        storageRef.downloadUrl.addOnSuccessListener {
-                            Glide.with(viewHolder.itemView.context).load(it)
-                                .into(viewHolder.profilePicture)
-                            userCache.uri = it
-                        }
-                        userCacheInformation[userId] = userCache
-                    }
-                }
+            MainActivity.retrieveUserInformation(userId,
+                viewHolder.displayNameTextView,
+                viewHolder.uniqueIdentifiantTextView,
+                viewHolder.profilePicture,
+                viewHolder.badge,
+            )
         }
 
         viewHolder.mainLayout.setOnClickListener {

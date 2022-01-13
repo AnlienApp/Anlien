@@ -6,8 +6,8 @@ import android.app.Dialog
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
@@ -39,8 +39,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import java.text.SimpleDateFormat
 import java.util.*
@@ -63,6 +61,7 @@ class EventActivity : AppCompatActivity() {
     private var mPlaceLatitude = 0.0
     private var mPlaceLongitude = 0.0
     private var mLock = false
+    private var mInitAddress = false
 
     private var mOrganizerNotificationToken = ""
 
@@ -148,6 +147,7 @@ class EventActivity : AppCompatActivity() {
             mMessageListener!!.remove()
             mMessageListener = null
         }
+        removeNotification()
     }
 
     override fun onResume() {
@@ -155,6 +155,26 @@ class EventActivity : AppCompatActivity() {
         checkCurrentUser()
         initChat()
         initChatSnapshotListener()
+        removeNotification()
+    }
+
+    private fun removeNotification() {
+        mDatabase!!.collection("users")
+            .document(mCurrentUserId!!)
+            .collection("events")
+            .whereEqualTo("eventId", mEventId).get()
+            .addOnSuccessListener { userEventDocs ->
+                for (userEventDoc in userEventDocs) {
+                    if (!userEventDoc.exists()) continue
+                    mDatabase!!.collection("users")
+                        .document(mCurrentUserId!!)
+                        .collection("events")
+                        .document(userEventDoc.id).update(
+                            "notification",
+                            false
+                        )
+                }
+            }
     }
 
     /**
@@ -191,7 +211,7 @@ class EventActivity : AppCompatActivity() {
             }
             findViewById<EditText>(R.id.address).addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable) {
-                    if(!bEditedByAutoComple) {
+                    if(!bEditedByAutoComple && !mInitAddress) {
                         mPlaceId = ""
                         mPlaceLatitude = 0.0
                         mPlaceLongitude = 0.0
@@ -202,9 +222,7 @@ class EventActivity : AppCompatActivity() {
             })
         }
         else {
-            addressButton.setOnClickListener {
-                Toast.makeText(applicationContext, getString(R.string.address_modification_forbiden), Toast.LENGTH_SHORT).show()
-            }
+            addressButton.visibility = View.GONE
         }
 
         mapButton.setOnClickListener {
@@ -545,6 +563,12 @@ class EventActivity : AppCompatActivity() {
         bottomMenu.visibility = View.GONE
 
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.discussion)
+
+        val recyclerView: RecyclerView = findViewById(R.id.message_list)
+        if(null != mMessageArrayList && mMessageArrayList!!.size != 0) {
+            recyclerView.adapter!!.notifyDataSetChanged()
+            recyclerView.smoothScrollToPosition(mMessageArrayList!!.size - 1)
+        }
     }
 
     @SuppressLint("SetTextI18n", "CutPasteId", "SimpleDateFormat")
@@ -558,6 +582,13 @@ class EventActivity : AppCompatActivity() {
                         mPlaceId = doc["placeId"].toString()
                         mPlaceLatitude = doc["latitude"] as Double
                         mPlaceLongitude = doc["longitude"] as Double
+                    }
+
+                    // Init the GPS button color
+                    if(mPlaceId.isBlank() || mPlaceId.isEmpty())
+                    {
+                        val mapButton = findViewById<ImageView>(R.id.go_to_map)
+                        mapButton.setColorFilter(Color.argb(255, 255, 0, 0))
                     }
 
                     FirebaseFirestore.getInstance()
@@ -578,7 +609,11 @@ class EventActivity : AppCompatActivity() {
                         .uppercase(Locale.getDefault()) + formatter.format(newDate).toString().substring(1)
                         .lowercase(Locale.getDefault())
                     findViewById<TextView>(R.id.hour).text = doc["hour"].toString()
+
+                    mInitAddress = true
                     findViewById<EditText>(R.id.address).setText(doc["address"].toString())
+                    mInitAddress = false
+
                     findViewById<EditText>(R.id.description).setText(doc["description"].toString())
 
                     if(!bOrganizer) {
@@ -662,31 +697,44 @@ class EventActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.update_button).animate().rotation(findViewById<ImageView>(R.id.update_button).rotation+360.0f).withEndAction {
                 Toast.makeText(applicationContext, getString(R.string.event_update_success), Toast.LENGTH_SHORT).show()
             }
-            if(mStartDateInMillis != mCurrentDateInMillis) {
-                database.collection("events")
-                    .document(mEventId)
-                    .collection("partipcipants").get()
-                    .addOnSuccessListener { docs1 ->
-                        for (doc1 in docs1) {
-                            if (null == doc1) continue
-                            database.collection("users")
-                                .document(doc1["userId"].toString())
-                                .collection("events")
-                                .whereEqualTo("eventId", mEventId).get()
-                                .addOnSuccessListener { docs2 ->
-                                    for (doc2 in docs2) {
-                                        if (null == doc2) continue
-                                        database.collection("users")
-                                            .document(doc1["userId"].toString())
-                                            .collection("events")
-                                            .document(doc2.id).update(
-                                                "eventDateInMilli",
-                                                mCurrentDateInMillis
-                                            )
+
+        database.collection("events")
+            .document(mEventId)
+            .collection("participants").get()
+            .addOnSuccessListener { docs ->
+                for (doc in docs) {
+                    if (!doc.exists()) continue
+                    val participantId: String = doc.getString("userId").toString()
+                    database.collection("users")
+                        .document(participantId)
+                        .collection("events")
+                        .whereEqualTo("eventId", mEventId).get()
+                        .addOnSuccessListener { userEventDocs ->
+                            for (userEventDoc in userEventDocs) {
+                                if (!userEventDoc.exists()) continue
+                                database.collection("users")
+                                    .document(participantId)
+                                    .collection("events")
+                                    .document(userEventDoc.id).update(
+                                        "notification",
+                                        true
+                                    ).addOnSuccessListener {
+                                        // Send notification to the user
+                                        val userId = doc["userId"].toString()
+                                        if(userCacheInformation.containsKey(userId)) {
+                                            val notification =
+                                                FirebaseNotificationSender(
+                                                    userCacheInformation[userId]!!.notificationToken,
+                                                    "Mise à jour",
+                                                    "Des informations à propos de "+mEventTitle+" viennent d'être mise à jour",
+                                                    this
+                                                )
+                                            notification.SendNotification()
+                                        }
                                     }
-                                }
+                            }
                         }
-                    }
+                }
             }
         }
     }
@@ -1032,24 +1080,12 @@ class EventActivity : AppCompatActivity() {
                 Toast.makeText(dialog.context, getString(R.string.for_me), Toast.LENGTH_SHORT).show()
             }
             else {
-                FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(currentUserId).get().addOnSuccessListener { doc ->
-                        if(doc.exists()) {
-                            val userCache = MainActivity.Companion.UserInformation()
-                            userCache.displayName = doc["displayName"].toString()
-                            userCache.identifiant = doc["identifiant"].toString()
-                            userCache.notificationToken = doc["notificationToken"].toString()
-                            userCacheInformation[currentUserId] = userCache
-                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                                .child("profileImages")
-                                .child("$currentUserId.jpeg")
-                            storageRef.downloadUrl.addOnSuccessListener {
-                                Glide.with(applicationContext).load(it).into(takeItRoundedImageView)
-                                userCache.uri = it
-                            }
-                        }
-                    }
+                MainActivity.retrieveUserInformation(currentUserId,
+                    null,
+                    null,
+                    takeItRoundedImageView,
+                    null
+                )
             }
         }
 
@@ -1168,7 +1204,74 @@ class EventActivity : AppCompatActivity() {
                     )
                     mDatabase!!.collection("events").document(mEventId).collection("messages")
                         .add(messageData).addOnSuccessListener {
-                        messageEditText.text.clear()
+                            messageEditText.text.clear()
+                            // Send notification to other users
+                            mDatabase!!.collection("events")
+                                    .document(mEventId)
+                                    .collection("participants").get()
+                                    .addOnSuccessListener { docs ->
+                                        for (doc in docs) {
+                                            if (!doc.exists()) continue
+                                            val participantId: String =
+                                                doc.getString("userId").toString()
+                                            mDatabase!!.collection("users")
+                                                .document(participantId)
+                                                .collection("events")
+                                                .whereEqualTo("eventId", mEventId).get()
+                                                .addOnSuccessListener { userEventDocs ->
+                                                    for (userEventDoc in userEventDocs) {
+                                                        if (!userEventDoc.exists()) continue
+                                                        mDatabase!!.collection("users")
+                                                            .document(participantId)
+                                                            .collection("events")
+                                                            .document(userEventDoc.id).update(
+                                                                "notification",
+                                                                true
+                                                            ).addOnSuccessListener {
+                                                                if(userCacheInformation.containsKey(participantId) && userCacheInformation.containsKey(mCurrentUserId)) {
+                                                                    val notification =
+                                                                        FirebaseNotificationSender(
+                                                                            userCacheInformation[participantId]!!.notificationToken,
+                                                                            mEventTitle,
+                                                                            userCacheInformation[mCurrentUserId]!!.displayName+" a envoyé un message",
+                                                                            this
+                                                                        )
+                                                                    notification.SendNotification()
+                                                                }
+                                                            }
+                                                    }
+                                                }
+                                        }
+                                    }
+                            // Send notification to the organizer
+                            val organizerId = intent.extras!!["organizerId"].toString()
+                            mDatabase!!.collection("users")
+                                .document(organizerId)
+                                .collection("events")
+                                .whereEqualTo("eventId", mEventId).get()
+                                .addOnSuccessListener { userEventDocs ->
+                                    for (userEventDoc in userEventDocs) {
+                                        if (!userEventDoc.exists()) continue
+                                        mDatabase!!.collection("users")
+                                            .document(organizerId)
+                                            .collection("events")
+                                            .document(userEventDoc.id).update(
+                                                "notification",
+                                                true
+                                            ).addOnSuccessListener {
+                                                if(userCacheInformation.containsKey(organizerId) && userCacheInformation.containsKey(mCurrentUserId)) {
+                                                    val notification =
+                                                        FirebaseNotificationSender(
+                                                            userCacheInformation[organizerId]!!.notificationToken,
+                                                            "Message",
+                                                            userCacheInformation[organizerId]!!.displayName+" a envoyé un message sur " + mEventTitle,
+                                                            this
+                                                        )
+                                                    notification.SendNotification()
+                                                }
+                                            }
+                                    }
+                                }
                     }
                 }
             }
@@ -1178,7 +1281,9 @@ class EventActivity : AppCompatActivity() {
     private fun initChatSnapshotListener() {
         // Init the listener on message list
         mMessageListener = mDatabase!!.collection("events")
-            .document(mEventId).collection("messages")
+            .document(mEventId)
+            .collection("messages")
+            .limit(50)
             .addSnapshotListener { value, error ->
                 if (error != null) {
                     Toast.makeText(this, getString(R.string.chat_listen_failed), Toast.LENGTH_SHORT).show()
@@ -1281,7 +1386,6 @@ class EventActivity : AppCompatActivity() {
                                     .add(participantData).addOnSuccessListener {
                                         val currentEventData = hashMapOf(
                                             "eventId" to mEventId,
-                                            "eventDateInMilli" to mCurrentDateInMillis,
                                         )
                                         FirebaseFirestore.getInstance()
                                             .collection("users")

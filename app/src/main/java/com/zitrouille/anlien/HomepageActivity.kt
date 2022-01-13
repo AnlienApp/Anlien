@@ -47,6 +47,11 @@ import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import android.view.LayoutInflater
+
+import com.google.android.material.bottomnavigation.BottomNavigationItemView
+import com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker
+import java.time.format.DateTimeFormatter
 
 
 class HomepageActivity : AppCompatActivity() {
@@ -72,6 +77,8 @@ class HomepageActivity : AppCompatActivity() {
     private var mDialog: Dialog? = null
 
     private var mDisplayEventHistory: Boolean = false
+
+    private var mFriendNotificationView: View? = null
 
     /**
      * Init different behaviors when user click on the bottom navigation menu
@@ -108,6 +115,7 @@ class HomepageActivity : AppCompatActivity() {
         super.onResume()
         checkCurrentUser()
         retrieveEventList()
+        initFriendNotification()
     }
 
     override fun onPause() {
@@ -135,6 +143,21 @@ class HomepageActivity : AppCompatActivity() {
         friendListSwipe.setOnRefreshListener {
             retrieveFriendList()
             friendListSwipe.setRefreshing(false)
+        }
+    }
+
+    private fun initFriendNotification() {
+        if(null == mFriendNotificationView) {
+            val bottomMenu = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            mDatabase!!.collection("users").document(mCurrentUserId).get()
+                .addOnSuccessListener { doc ->
+                    if (doc.exists() && doc.contains("friendNotification") && doc["friendNotification"] == true) {
+                        val v: View = bottomMenu.findViewById(R.id.nav_friend)
+                        val itemView = v as BottomNavigationItemView
+                        mFriendNotificationView = LayoutInflater.from(this)
+                            .inflate(R.layout.notification_badge, itemView, true)
+                    }
+                }
         }
     }
 
@@ -232,28 +255,12 @@ class HomepageActivity : AppCompatActivity() {
                             .into(dialog.findViewById(R.id.event_organizer_profile_picture))
                 }
                 else {
-                    // User is not yet present in the cache
-                    database.collection("users")
-                        .document(organizerId)
-                        .get().addOnSuccessListener { userDoc ->
-                            if(userDoc.exists()) {
-                                val userCache = MainActivity.Companion.UserInformation()
-                                userCache.displayName = userDoc.data!!["displayName"].toString()
-                                userCache.identifiant = userDoc.data!!["identifiant"].toString()
-                                userCache.notificationToken = userDoc.data!!["notificationToken"].toString()
-                                eventOrganizerName.text = userCache.displayName
-                                val storageRef: StorageReference =
-                                    FirebaseStorage.getInstance().reference
-                                        .child("profileImages")
-                                        .child("$organizerId.jpeg")
-                                storageRef.downloadUrl.addOnSuccessListener {
-                                    Glide.with(applicationContext).load(it)
-                                        .into(dialog.findViewById(R.id.event_organizer_profile_picture))
-                                    userCache.uri = it
-                                }
-                                userCacheInformation[organizerId] = userCache
-                            }
-                        }
+                    MainActivity.retrieveUserInformation(organizerId,
+                        eventOrganizerName,
+                        null,
+                        dialog.findViewById(R.id.event_organizer_profile_picture),
+                        null
+                    )
                 }
                 database.collection("users")
                     .document(mCurrentUserId)
@@ -283,7 +290,6 @@ class HomepageActivity : AppCompatActivity() {
                                         .add(participantData).addOnSuccessListener {
                                             val eventData = hashMapOf(
                                                 "eventId" to iEventId,
-                                                "eventDateInMilli" to doc["date"],
                                             )
                                             database.collection("users")
                                                 .document(mCurrentUserId)
@@ -426,6 +432,10 @@ class HomepageActivity : AppCompatActivity() {
             Glide.with(applicationContext).load(it).into(mAddFriendDialog!!.findViewById(R.id.profile_picture))
         }
 
+        if(userCacheInformation.containsKey(iDoc.id)) {
+            if("none" != userCacheInformation[iDoc.id]!!.displayedBadge)
+                Glide.with(applicationContext).load(MainActivity.retrieveBadge(userCacheInformation[iDoc.id]!!.displayedBadge)).into(mAddFriendDialog!!.findViewById(R.id.badge))
+        }
 
         val addFriendImageView = mAddFriendDialog!!.findViewById(R.id.add_friend) as ImageView
         val yourselfImageView = mAddFriendDialog!!.findViewById(R.id.yourself) as ImageView
@@ -512,33 +522,9 @@ class HomepageActivity : AppCompatActivity() {
                         )
                     notification.SendNotification()
                 }
-                else {
-                    mDatabase!!.collection("users").document(iUserId).get()
-                        .addOnSuccessListener { document ->
-                            Log.i("Database request", "User retrieved in HomepageActivity::displayPersonnalProfilePage - " + document.id)
-                            val userCache = MainActivity.Companion.UserInformation()
-                            userCache.displayName = document["displayName"].toString()
-                            userCache.identifiant = document["identifiant"].toString()
-                            userCache.notificationToken = document["notificationToken"].toString()
-                            val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                                .child("profileImages")
-                                .child("$iUserId.jpeg")
-                            storageRef.downloadUrl.addOnSuccessListener {
-                                userCacheInformation[iUserId]!!.uri = it
-                            }
-                            userCacheInformation[iUserId] = userCache
-                            val notification =
-                                FirebaseNotificationSender(
-                                    userCacheInformation[iUserId]!!.notificationToken,
-                                    "Demande",
-                                    userCacheInformation[mCurrentUserId]!!.displayName + " souhaite être votre ami",
-                                    this
-                                )
-                            notification.SendNotification()
-                        }
-                }
 
-
+                // Update the dest user to display notification on his app
+                mDatabase!!.collection("users").document(iUserId).update("friendNotification", true)
 
                 hideFriendSearchBar(false)
             }
@@ -635,6 +621,8 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<RelativeLayout>(R.id.mainUserPage).visibility = View.GONE
         }
 
+        initFriendNotification()
+
         if(null == mEventArrayList || null == mEventHistoryArrayList) {
 
             findViewById<ImageView>(R.id.join_event).setOnClickListener {
@@ -667,6 +655,14 @@ class HomepageActivity : AppCompatActivity() {
         homepageVisibility(false)
         friendpageVisibility(true)
         userpageVisibility(false)
+
+        if(null != mFriendNotificationView) {
+            val bottomMenu = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            val view = bottomMenu.findViewById<BottomNavigationItemView>(R.id.nav_friend)
+            view.removeView(view.findViewById<TextView>(R.id.notifications_badge))
+            mFriendNotificationView = null
+            mDatabase!!.collection("users").document(mCurrentUserId).update("friendNotification", false)
+        }
 
         if(null == mFriendArrayList) {
             retrieveFriendList()
@@ -825,35 +821,33 @@ class HomepageActivity : AppCompatActivity() {
         friendpageVisibility(false)
         userpageVisibility(true)
 
+        initFriendNotification()
+
         if(userCacheInformation.containsKey(mCurrentUserId)) {
             findViewById<TextView>(R.id.userName).text = userCacheInformation[mCurrentUserId]!!.displayName
             findViewById<TextView>(R.id.pseudo).text = userCacheInformation[mCurrentUserId]!!.identifiant
             findViewById<ImageView>(R.id.qr_code).setImageBitmap(generateQRCode(mCurrentUserId))
+            if("none" != userCacheInformation[mCurrentUserId]!!.displayedBadge)
+                Glide.with(applicationContext).load(MainActivity.retrieveBadge(userCacheInformation[mCurrentUserId]!!.displayedBadge)).into(findViewById(R.id.main_user_badge))
         }
         else {
-            mDatabase!!.collection("users").document(mCurrentUserId).get()
-                .addOnSuccessListener { document ->
-                    Log.i("Database request", "User retrieved in HomepageActivity::displayPersonnalProfilePage - " + document.id)
-                    val userCache = MainActivity.Companion.UserInformation()
-                    userCache.displayName = document["displayName"].toString()
-                    userCache.identifiant = document["identifiant"].toString()
-                    userCache.notificationToken = document["notificationToken"].toString()
-                    val storageRef: StorageReference = FirebaseStorage.getInstance().reference
-                        .child("profileImages")
-                        .child("$mCurrentUserId.jpeg")
-                    storageRef.downloadUrl.addOnSuccessListener {
-                        userCacheInformation[mCurrentUserId]!!.uri = it
-                        userCache.uri = it
-                    }
-                    userCacheInformation[mCurrentUserId] = userCache
-                    findViewById<TextView>(R.id.userName).text = userCache.displayName
-                    findViewById<TextView>(R.id.pseudo).text = userCache.identifiant
-                    findViewById<ImageView>(R.id.qr_code).setImageBitmap(
-                        generateQRCode(
-                            mCurrentUserId
-                        )
-                    )
-                }
+            MainActivity.retrieveUserInformation(mCurrentUserId,
+                findViewById(R.id.userName),
+                findViewById(R.id.pseudo),
+                null,
+                findViewById(R.id.badge))
+        }
+
+        findViewById<ImageView>(R.id.qr_code).setImageBitmap(
+            generateQRCode(
+                mCurrentUserId
+            )
+        )
+
+        // Open help page
+        findViewById<TextView>(R.id.help_project).setOnClickListener {
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://fr.tipeee.com/anlien/"))
+            startActivity(browserIntent)
         }
 
         findViewById<ImageView>(R.id.edit_displayed_name).setOnClickListener {
@@ -961,10 +955,12 @@ class HomepageActivity : AppCompatActivity() {
 
         /**
          * Retrieve all friends from the current user
+         * DATABASE CALL USERS/FRIENDS
          */
         mDatabase!!.collection("users")
             .document(mCurrentUserId)
-            .collection("friends").get().addOnSuccessListener { documents ->
+            .collection("friends")
+            .get().addOnSuccessListener { documents ->
                 Log.i("Database request", "Friend list retrieved in HomepageActivity::retrieveFriendList")
 
                 mFriendArrayList = ArrayList()
@@ -987,7 +983,7 @@ class HomepageActivity : AppCompatActivity() {
                      * If this is the last document of the list, finish the creation.
                      * In other case, juste continue into the next friend document.
                      */
-                    if(null == document) {
+                    if(!document.exists()) {
                         // Current document is the last one of the list, fill list with retrieve users
                         if(document == documents.documents[documents.size()-1]) {
                             mActivityMainBinding!!.friendList.adapter = HomepageFriendListAdapter(this, mFriendArrayList!!)
@@ -1024,6 +1020,7 @@ class HomepageActivity : AppCompatActivity() {
 
                         // Current document is the last one of the list, fill list with retrieve users
                         if (document == documents.documents[documents.size() - 1]) {
+                            mFriendArrayList!!.sortBy { it.getIdentifiant() }
                             mActivityMainBinding!!.friendList.adapter =
                                 HomepageFriendListAdapter(this, mFriendArrayList!!)
                             mfriendListReceptionRunning = false
@@ -1039,41 +1036,80 @@ class HomepageActivity : AppCompatActivity() {
                                 userCache.displayName = doc["displayName"].toString()
                                 userCache.identifiant = doc["identifiant"].toString()
                                 userCache.notificationToken = doc["notificationToken"].toString()
+
+                                if("none" != doc["displayedBadge"]) {
+                                    FirebaseFirestore.getInstance()
+                                        .collection("users")
+                                        .document(userId).collection("badges")
+                                        .document(doc["displayedBadge"].toString())
+                                        .get().addOnSuccessListener { badgeDoc ->
+                                            userCache.displayedBadge = badgeDoc["name"].toString()
+                                        }
+                                }
+                                userCacheInformation[userId] = userCache
                                 val storageRef: StorageReference = FirebaseStorage.getInstance().reference
                                     .child("profileImages")
                                     .child("$userId.jpeg")
                                 storageRef.downloadUrl.addOnSuccessListener {
                                     userCache.uri = it
-                                }
-                                userCacheInformation[userId] = userCache
 
-                                var bShouldBeValid = false
-                                val status = document.getLong("status")
-                                if (status == 2L) {
-                                    bShouldBeValid = true
-                                }
+                                    var bShouldBeValid = false
+                                    val status = document.getLong("status")
+                                    if (status == 2L) {
+                                        bShouldBeValid = true
+                                    }
 
-                                // Create user to display in the list
-                                mFriendArrayList!!.add(
-                                    HomepageFriend(
-                                        userCacheInformation[userId]!!.displayName,
-                                        userCacheInformation[userId]!!.identifiant,
-                                        document["request"] as Boolean,
-                                        bShouldBeValid,
-                                        document["userId"].toString(),
-                                        false
+                                    // Create user to display in the list
+                                    mFriendArrayList!!.add(
+                                        HomepageFriend(
+                                            userCacheInformation[userId]!!.displayName,
+                                            userCacheInformation[userId]!!.identifiant,
+                                            document["request"] as Boolean,
+                                            bShouldBeValid,
+                                            document["userId"].toString(),
+                                            false
+                                        )
                                     )
-                                )
 
-                                // Current document is the last one of the list, fill list with retrieve users
-                                if (document == documents.documents[documents.size() - 1]) {
-                                    mActivityMainBinding!!.friendList.adapter =
-                                        HomepageFriendListAdapter(this, mFriendArrayList!!)
-                                    mfriendListReceptionRunning = false
+                                    // Current document is the last one of the list, fill list with retrieve users
+                                    if (document == documents.documents[documents.size() - 1]) {
+                                        mFriendArrayList!!.sortBy { it.getIdentifiant() }
+                                        mActivityMainBinding!!.friendList.adapter =
+                                            HomepageFriendListAdapter(this, mFriendArrayList!!)
+                                        mfriendListReceptionRunning = false
+                                    }
+                                }.addOnFailureListener {
+                                    var bShouldBeValid = false
+                                    val status = document.getLong("status")
+                                    if (status == 2L) {
+                                        bShouldBeValid = true
+                                    }
+
+                                    // Create user to display in the list
+                                    mFriendArrayList!!.add(
+                                        HomepageFriend(
+                                            userCacheInformation[userId]!!.displayName,
+                                            userCacheInformation[userId]!!.identifiant,
+                                            document["request"] as Boolean,
+                                            bShouldBeValid,
+                                            document["userId"].toString(),
+                                            false
+                                        )
+                                    )
+
+                                    // Current document is the last one of the list, fill list with retrieve users
+                                    if (document == documents.documents[documents.size() - 1]) {
+                                        mFriendArrayList!!.sortBy { it.getIdentifiant() }
+                                        mActivityMainBinding!!.friendList.adapter =
+                                            HomepageFriendListAdapter(this, mFriendArrayList!!)
+                                        mfriendListReceptionRunning = false
+                                    }
                                 }
+
                             }.addOnFailureListener {
                                 // Current document is the last one of the list, fill list with retrieve users
                                 if (document == documents.documents[documents.size() - 1]) {
+                                    mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                     mActivityMainBinding!!.friendList.adapter =
                                         HomepageFriendListAdapter(this, mFriendArrayList!!)
                                     mfriendListReceptionRunning = false
@@ -1092,6 +1128,7 @@ class HomepageActivity : AppCompatActivity() {
     private fun retrieveEventList() {
         if(mEventListReceptionRunning)
             return
+
         mEventListReceptionRunning = true
         // At first clean the previous list if exists
         mActivityMainBinding!!.eventList.adapter = null
@@ -1100,11 +1137,9 @@ class HomepageActivity : AppCompatActivity() {
         if(null != mEventHistoryArrayList)
             mEventHistoryArrayList!!.clear()
 
-        val time: Long = System.currentTimeMillis()-86400000 // Previous day as the current one
         mDatabase!!.collection("users")
             .document(mCurrentUserId)
             .collection("events")
-            .orderBy("eventDateInMilli", Query.Direction.ASCENDING)
             .limit(50)
             .get()
             .addOnSuccessListener { documents ->
@@ -1120,89 +1155,16 @@ class HomepageActivity : AppCompatActivity() {
                     mEventHistoryArrayList = ArrayList()
                     for (doc in documents) {
                         if (!doc.exists()) continue
-                        if(time > doc["eventDateInMilli"] as Long) {
-                            mEventHistoryArrayList!!.add(0,
-                                HomepageEvent(
-                                    doc["eventId"].toString(),
-                                )
-                            )
-                        }
-                        else {
-                            mDatabase!!
-                                .collection("events")
-                                .document(doc["eventId"].toString())
-                                .get().addOnSuccessListener { eventDocument ->
-                                    if(eventDocument.exists()) {
-                                        Log.i("Database request", "Event retrieved in HomepageActivity::retrieveEventList - "+eventDocument.id)
-                                        if(mCurrentUserId != eventDocument["organizerId"].toString()) {
-                                            // Check if the current event was not refused by the user
-                                            eventDocument.reference
-                                                .collection("participants")
-                                                .whereEqualTo("userId", mCurrentUserId)
-                                                .get().addOnSuccessListener { documents2 ->
-                                                    if (documents2.documents.size == 1) {
-                                                        if (documents2.documents[0].exists()) {
-                                                            if (2L == documents2.documents[0]["status"]) {
-                                                                mEventHistoryArrayList!!.add(
-                                                                    0,
-                                                                    HomepageEvent(
-                                                                        doc["eventId"].toString(),
-                                                                    )
-                                                                )
-                                                                if(doc == documents.documents[documents.size()-1]) {
-                                                                    if(!mDisplayEventHistory) {
-                                                                        mActivityMainBinding!!.eventList.adapter =
-                                                                            HomepageEventListAdapter(this, mEventArrayList!!)
-                                                                    }
-                                                                    else {
-                                                                        mActivityMainBinding!!.eventList.adapter =
-                                                                            HomepageEventListAdapter(this, mEventHistoryArrayList!!)
-                                                                    }
-                                                                    mEventListReceptionRunning = false
-                                                                }
-                                                            } else {
-                                                                mEventArrayList!!.add(
-                                                                    HomepageEvent(
-                                                                        doc["eventId"].toString(),
-                                                                    )
-                                                                )
-                                                                if(doc == documents.documents[documents.size()-1]) {
-                                                                    if(!mDisplayEventHistory) {
-                                                                        mActivityMainBinding!!.eventList.adapter =
-                                                                            HomepageEventListAdapter(this, mEventArrayList!!)
-                                                                    }
-                                                                    else {
-                                                                        mActivityMainBinding!!.eventList.adapter =
-                                                                            HomepageEventListAdapter(this, mEventHistoryArrayList!!)
-                                                                    }
-                                                                    mEventListReceptionRunning = false
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                        }
-                                        else {
-                                            mEventArrayList!!.add(
-                                                HomepageEvent(
-                                                    doc["eventId"].toString(),
-                                                )
-                                            )
-                                            if(doc == documents.documents[documents.size()-1]) {
-                                                if(!mDisplayEventHistory) {
-                                                    mActivityMainBinding!!.eventList.adapter =
-                                                        HomepageEventListAdapter(this, mEventArrayList!!)
-                                                }
-                                                else {
-                                                    mActivityMainBinding!!.eventList.adapter =
-                                                        HomepageEventListAdapter(this, mEventHistoryArrayList!!)
-                                                }
-                                                mEventListReceptionRunning = false
-                                            }
-                                        }
-                                    }
-                                }
-                        }
+
+                        var eventId = ""
+                        if(doc.contains("eventId")) eventId = doc["eventId"].toString()
+                        var bNotification = false
+                        if(doc.contains("notification")) bNotification = doc["notification"] as Boolean
+
+                        var bLastEvent = false
+                        if(doc == documents.last()) bLastEvent = true
+
+                        retrieveEvent(eventId, bNotification, bLastEvent)
                     }
                     findViewById<ListView>(R.id.eventList).visibility = View.VISIBLE
                     findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.GONE
@@ -1212,6 +1174,57 @@ class HomepageActivity : AppCompatActivity() {
                 findViewById<ListView>(R.id.eventList).visibility = View.GONE
                 findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.VISIBLE
             }
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun retrieveEvent(iEventId: String, ibNotification: Boolean, ibLastEvent: Boolean) {
+        mDatabase!!
+            .collection("events")
+            .document(iEventId)
+            .get().addOnSuccessListener { eventDocument ->
+                if(eventDocument.exists()) {
+
+                    var date = 0L
+                    if(eventDocument.contains("date")) date = eventDocument["date"] as Long
+
+                    val newDate: Date = Calendar.getInstance().time
+                    val sdf = SimpleDateFormat("D")
+                    sdf.timeZone = TimeZone.getDefault()
+                    newDate.time = date
+                    val eventDayOfYear = sdf.format(newDate)
+
+                    newDate.time = System.currentTimeMillis()
+                    val currentDayOfYear = sdf.format(newDate)
+
+                    if(mDisplayEventHistory && eventDayOfYear >= currentDayOfYear) {
+                        if(ibLastEvent) finishEventReception()
+                        return@addOnSuccessListener
+                    }
+                    else if(!mDisplayEventHistory && eventDayOfYear < currentDayOfYear) {
+                        if(ibLastEvent) finishEventReception()
+                        return@addOnSuccessListener
+                    }
+
+                    val homepageEvent = HomepageEvent(
+                        iEventId,
+                        ibNotification,
+                        date
+                    )
+
+                    Log.i("Database request", "Event retrieved in HomepageActivity::retrieveEventList - "+eventDocument.id)
+                    mEventArrayList!!.add(homepageEvent)
+
+                    if(ibLastEvent) finishEventReception()
+                }
+            }
+    }
+
+    private fun finishEventReception() {
+        mEventArrayList!!.sortBy { it.getDate() }
+        if(mDisplayEventHistory) mEventArrayList!!.reverse();
+        mActivityMainBinding!!.eventList.adapter =
+            HomepageEventListAdapter(this, mEventArrayList!!)
+        mEventListReceptionRunning = false
     }
 
     /**
@@ -1237,8 +1250,11 @@ class HomepageActivity : AppCompatActivity() {
     private fun checkCurrentUser() {
         if(null == FirebaseAuth.getInstance().currentUser) {
             startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
-        initMemberData()
+        else {
+            initMemberData()
+        }
     }
 
 }

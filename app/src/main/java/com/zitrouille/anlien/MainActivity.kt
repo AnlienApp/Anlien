@@ -14,12 +14,11 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import android.content.ContentValues.TAG
+import android.content.Context
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.Log
 import android.view.Window
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -30,11 +29,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 import android.text.InputFilter
 import android.text.InputFilter.AllCaps
+import android.widget.*
+import com.bumptech.glide.Glide
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlin.collections.HashMap
-
 
 /**
  * This activity is used to display the main screen of the application
@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             var identifiant = ""
             var notificationToken = ""
             var uri: Uri? = null
+            var displayedBadge: String = "none"
         }
 
         /**
@@ -73,6 +74,81 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     .document(FirebaseAuth.getInstance().currentUser!!.uid)
                     .update("notificationToken", iToken)
             }
+        }
+
+        fun retrieveUserInformation(iUserId: String,
+                                    iDisplayNameView: TextView?,
+                                    iIdentifiantView: TextView?,
+                                    iProfilePictureView: ImageView?,
+                                    iBadgeView: ImageView?) {
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(iUserId).get()
+                .addOnSuccessListener { doc ->
+                    Log.i("Database request", "User retrieved in cache creation - " + doc.id)
+                    val userCache = UserInformation()
+
+                    userCache.displayName = doc["displayName"].toString()
+                    userCache.identifiant = doc["identifiant"].toString()
+                    userCache.notificationToken = doc["notificationToken"].toString()
+
+                    if("none" != doc["displayedBadge"]) {
+                        FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(iUserId).collection("badges")
+                            .document(doc["displayedBadge"].toString())
+                            .get().addOnSuccessListener { badgeDoc ->
+                                userCache.displayedBadge = badgeDoc["name"].toString()
+                            }
+                    }
+
+                    if(null != iDisplayNameView) {
+                        iDisplayNameView.text = userCache.displayName
+                    }
+
+                    if(null != iIdentifiantView) {
+                        iIdentifiantView.text = userCache.displayName
+                    }
+
+                    if(null != iBadgeView) {
+                        Glide.with(iBadgeView.context).load(retrieveBadge(userCache.displayedBadge))
+                            .into(iBadgeView)
+                    }
+
+                    val storageRef: StorageReference = FirebaseStorage.getInstance().reference
+                        .child("profileImages")
+                        .child("$iUserId.jpeg")
+
+                    storageRef.downloadUrl.addOnSuccessListener { uri ->
+                        if(null != uri) {
+                            userCache.uri = uri
+                            if (null != iProfilePictureView) {
+                                Glide.with(iProfilePictureView.context).load(userCache.uri)
+                                    .into(iProfilePictureView)
+                            }
+                        }
+                    }
+                    userCacheInformation[iUserId] = userCache
+                }
+        }
+
+        fun retrieveBadge (iName: String) : Int {
+            if("alpha" == iName) return R.drawable.alpha
+            if("creator" == iName) return R.drawable.king
+            if("nde" == iName) return R.drawable.nde
+            return R.drawable.transparent
+        }
+        fun retrieveBadgeLarge (iName: String) : Int {
+            if("alpha" == iName) return R.drawable.badge_alpha
+            if("creator" == iName) return R.drawable.badge_king
+            if("nde" == iName) return R.drawable.badge_nde
+            return R.drawable.transparent
+        }
+        fun retrieveBadgeName (iName: String, iContext: Context) : String {
+            if("alpha" == iName) return iContext.getString(R.string.alpha_user)
+            if("creator" == iName) return "Créateur"
+            if("nde" == iName) return "Nicolas Dolé"
+            return "Sans nom"
         }
     }
 
@@ -115,6 +191,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * goto registerForActivityResult to analyze the result of this activity.
      */
     private fun signInActivity() {
+        findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
+        findViewById<ImageView>(R.id.sign_in_button).visibility = View.GONE
         val googleSignInClient = GoogleSignIn.getClient(this, mGoogleSignInOptions!!)
         val signInIntent = googleSignInClient.signInIntent
         mResultLauncher!!.launch(signInIntent)
@@ -157,7 +235,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             val userInformation = hashMapOf(
                 "displayName" to currentUser.displayName,
                 "identifiant" to "",
-                "notificationToken" to ""
+                "notificationToken" to "",
+                "friendNotification" to false,
+                "displayedBadge" to "none",
             )
             val db = FirebaseFirestore.getInstance()
             db.collection("users").document(currentUser.uid).get().addOnSuccessListener { doc->
@@ -173,6 +253,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         userCache.identifiant = doc["identifiant"] as String
                         userCache.notificationToken = doc["notificationToken"] as String
 
+                        if("none" != doc["displayedBadge"]) {
+                            FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(currentUser.uid).collection("badges")
+                                .document(doc["displayedBadge"].toString())
+                                .get().addOnSuccessListener { badgeDoc ->
+                                    userCache.displayedBadge = badgeDoc["name"].toString()
+                                }
+                        }
+
                         val userId = currentUser.uid
                         val storageRef: StorageReference = FirebaseStorage.getInstance().reference
                             .child("profileImages")
@@ -182,7 +272,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         }
                         userCacheInformation[userId] = userCache
 
-                        startActivity(Intent(this, HomepageActivity::class.java))
+                        checkNewBadges(currentUser.uid)
                     }
                     else {
                         displayPseudoCreation()
@@ -200,6 +290,54 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 }
             }
         }
+        else {
+            findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+            findViewById<ImageView>(R.id.sign_in_button).visibility = View.VISIBLE
+        }
+    }
+
+    private fun checkNewBadges(iUserId: String) {
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(iUserId)
+            .collection("badges")
+            .whereEqualTo("new", true).get().addOnSuccessListener { newBadges ->
+                if(0 != newBadges.size()) {
+                    val doc = newBadges.documents[0]
+                    if(doc.exists()) {
+                        val badgeData = hashMapOf(
+                            "name" to doc["name"].toString(),
+                        )
+                        doc.reference.set(badgeData).addOnSuccessListener {
+                            mDialog = Dialog(this)
+                            mDialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                            mDialog!!.setCancelable(false)
+                            mDialog!!.setContentView(R.layout.dialog_new_badge)
+                            mDialog!!.findViewById<TextView>(R.id.badge_name).text =
+                                retrieveBadgeName(doc["name"].toString(), applicationContext)
+                            Glide.with(applicationContext)
+                                .load(retrieveBadgeLarge(doc["name"].toString()))
+                                .into(mDialog!!.findViewById(R.id.badge_icon))
+                            mDialog!!.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+                            mDialog!!.show()
+
+                            mDialog!!.findViewById<ImageView>(R.id.badge_icon).animate().rotation(360.0f).start()
+
+                            mDialog!!.findViewById<ImageView>(R.id.valid).setOnClickListener {
+                                checkCurrentUser()
+                            }
+                        }.addOnFailureListener {
+                            startActivity(Intent(this, HomepageActivity::class.java))
+                        }
+                    }
+                    else {
+                        startActivity(Intent(this, HomepageActivity::class.java))
+                    }
+                }
+                else {
+                    startActivity(Intent(this, HomepageActivity::class.java))
+                }
+            }
     }
 
     @SuppressLint("CutPasteId")
@@ -273,7 +411,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             val newText = pseudoEditText.text.toString()
             val userId = mAuth!!.currentUser!!.uid
             db.collection("users").document(userId).update("identifiant", newText).addOnSuccessListener {
-                checkCurrentUser()
+                FirebaseFirestore.getInstance().collection("users").document(userId).get().addOnSuccessListener { doc ->
+                    val alphaBadge = hashMapOf(
+                        "name" to "alpha",
+                        "new" to "true",
+                    )
+                    doc.reference.collection("badges").add(alphaBadge).addOnSuccessListener { badgeDoc ->
+                        doc.reference.update("displayedBadge", badgeDoc.id).addOnSuccessListener {
+                            checkCurrentUser()
+                        }
+                    }
+                }
             }
         }
 

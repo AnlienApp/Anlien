@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/nav_info"
-        android:title="Info"
+        android:title="@string/info"
         android:icon="@drawable/ic_info" />
     <item android:id="@+id/nav_participant"
-        android:title="Participants"
+        android:title="@string/participant_list_edition"
         android:icon="@drawable/ic_friend" />
     <item android:id="@+id/nav_shopping"
-        android:title="Courses"
+        android:title="@string/buys"
         android:icon="@drawable/ic_shopping" />
     <item android:id="@+id/nav_pot"
-        android:title="Cagnotte"
+        android:title="@string/cash"
         android:icon="@drawable/ic_money" />
     <item android:id="@+id/nav_chat"
-        android:title="Chat"
+        android:title="@string/chat"
         android:icon="@drawable/ic_chat" />
 </menu>
