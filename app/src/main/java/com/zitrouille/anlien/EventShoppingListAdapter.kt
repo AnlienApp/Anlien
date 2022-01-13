@@ -142,7 +142,7 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
                             userCacheInformation[currentUserId]!!.displayName + " s'occupe de " + iViewHolder.nameTextView.text,
                             iViewHolder.itemView.context as Activity
                         )
-                    notification.SendNotification()
+                    notification.sendNotification()
                 }
                 else {
                     MainActivity.retrieveUserInformation(currentUserId,
@@ -195,7 +195,7 @@ class EventShoppingListAdapter(private val dataSet: ArrayList<EventShopping>) :
                             userCacheInformation[currentUserId]!!.displayName + " ne s'occupe plus de " + iViewHolder.nameTextView.text,
                             iViewHolder.itemView.context as Activity
                         )
-                    notification.SendNotification()
+                    notification.sendNotification()
                 } else {
                     MainActivity.retrieveUserInformation(
                         iViewHolder.eventOrganizerId,

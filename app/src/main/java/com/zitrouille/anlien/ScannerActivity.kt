@@ -43,10 +43,6 @@ class ScannerActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-    }
-
     private fun requestForCamera() {
         Dexter.withActivity(this)
             .withPermissions(

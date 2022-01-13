@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -41,18 +40,13 @@ import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.baoyz.widget.PullRefreshLayout
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.Query
 import com.google.firebase.ktx.Firebase
 import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import android.view.LayoutInflater
-
 import com.google.android.material.bottomnavigation.BottomNavigationItemView
-import com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker
-import java.time.format.DateTimeFormatter
-
 
 class HomepageActivity : AppCompatActivity() {
 
@@ -192,7 +186,7 @@ class HomepageActivity : AppCompatActivity() {
     private fun initializeProfilePicture() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if(null != currentUser!!.photoUrl) {
-            Glide.with(applicationContext).load(currentUser!!.photoUrl)
+            Glide.with(applicationContext).load(currentUser.photoUrl)
                 .into(findViewById(R.id.profile_picture))
         }
     }
@@ -520,7 +514,7 @@ class HomepageActivity : AppCompatActivity() {
                             userCacheInformation[mCurrentUserId]!!.displayName + " souhaite être votre ami",
                             this
                         )
-                    notification.SendNotification()
+                    notification.sendNotification()
                 }
 
                 // Update the dest user to display notification on his app
@@ -528,7 +522,7 @@ class HomepageActivity : AppCompatActivity() {
 
                 hideFriendSearchBar(false)
             }
-            .addOnFailureListener { e ->
+            .addOnFailureListener {
                 hideFriendSearchBar(false)
             }
     }
@@ -1050,8 +1044,8 @@ class HomepageActivity : AppCompatActivity() {
                                 val storageRef: StorageReference = FirebaseStorage.getInstance().reference
                                     .child("profileImages")
                                     .child("$userId.jpeg")
-                                storageRef.downloadUrl.addOnSuccessListener {
-                                    userCache.uri = it
+                                storageRef.downloadUrl.addOnSuccessListener { uri ->
+                                    userCache.uri = uri
 
                                     var bShouldBeValid = false
                                     val status = document.getLong("status")
@@ -1221,7 +1215,7 @@ class HomepageActivity : AppCompatActivity() {
 
     private fun finishEventReception() {
         mEventArrayList!!.sortBy { it.getDate() }
-        if(mDisplayEventHistory) mEventArrayList!!.reverse();
+        if(mDisplayEventHistory) mEventArrayList!!.reverse()
         mActivityMainBinding!!.eventList.adapter =
             HomepageEventListAdapter(this, mEventArrayList!!)
         mEventListReceptionRunning = false

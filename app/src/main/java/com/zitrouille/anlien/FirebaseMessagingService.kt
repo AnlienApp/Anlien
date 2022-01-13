@@ -19,11 +19,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.zitrouille.anlien.MainActivity.Companion.updateCurrentUserMessagingToken
 import org.json.JSONException
 import org.json.JSONObject
-import android.content.ComponentName
-
 import android.app.ActivityManager
-import android.app.ActivityManager.RunningTaskInfo
-
 
 class FirebaseMessagingService : FirebaseMessagingService() {
 
@@ -100,7 +96,7 @@ class FirebaseNotificationSender(iUserFcmToken: String, iTile: String, iBody: St
     /**
      * Notification will be send to the desired user(s)
      */
-    fun SendNotification() {
+    fun sendNotification() {
         mRequestQueue = Volley.newRequestQueue(mActivity)
         val mainObject = JSONObject()
         try  {

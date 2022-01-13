@@ -15,7 +15,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import android.content.ContentValues.TAG
 import android.content.Context
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.Log
 import android.view.Window
@@ -361,7 +360,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val db = FirebaseFirestore.getInstance()
         pseudoEditText.addTextChangedListener {
             var timer = Timer()
-            val DELAY: Long = 500 // Milliseconds
+            val delay: Long = 500 // Milliseconds
             pseudoEditText.doAfterTextChanged {
                 timer.cancel()
                 timer = Timer()
@@ -402,7 +401,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             }
                         }
                     },
-                    DELAY
+                    delay
                 )
             }
         }

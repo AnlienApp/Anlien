@@ -79,12 +79,12 @@ class CreateEventActivity : AppCompatActivity() {
         val result = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             if(Activity.RESULT_OK == result.resultCode) {
                 result.data?.let {
-                    val place = Autocomplete.getPlaceFromIntent(result.data)
+                    val place = Autocomplete.getPlaceFromIntent(result.data!!)
                     bEditedByAutoComple = true
                     findViewById<EditText>(R.id.address).setText(place.name)
-                    mPlaceId = place.id
-                    mPlaceLatitude = place.latLng.latitude
-                    mPlaceLongitude = place.latLng.longitude
+                    mPlaceId = place.id!!
+                    mPlaceLatitude = place.latLng!!.latitude
+                    mPlaceLongitude = place.latLng!!.longitude
                     bEditedByAutoComple = false
                 }
             }
@@ -221,7 +221,7 @@ class CreateEventActivity : AppCompatActivity() {
                                                                 userCacheInformation[mCurrentUserId]!!.displayName + " vous invite à l'évènement " + title.toString(),
                                                                 this
                                                             )
-                                                        notification.SendNotification()
+                                                        notification.sendNotification()
                                                         if (participant == mParticipantList!![mParticipantList!!.size - 1])
                                                             finishEventCreation(
                                                                 createdEvent.id,

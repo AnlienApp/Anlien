@@ -192,12 +192,12 @@ class EventActivity : AppCompatActivity() {
             val result = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
                 if(Activity.RESULT_OK == result.resultCode) {
                     result.data?.let {
-                        val place = Autocomplete.getPlaceFromIntent(result.data)
+                        val place = Autocomplete.getPlaceFromIntent(result.data!!)
                         bEditedByAutoComple = true
                         findViewById<EditText>(R.id.address).setText(place.name)
-                        mPlaceId = place.id
-                        mPlaceLatitude = place.latLng.latitude
-                        mPlaceLongitude = place.latLng.longitude
+                        mPlaceId = place.id!!
+                        mPlaceLatitude = place.latLng!!.latitude
+                        mPlaceLongitude = place.latLng!!.longitude
                         bEditedByAutoComple = false
                     }
                 }
@@ -420,7 +420,7 @@ class EventActivity : AppCompatActivity() {
                                         userCacheInformation[mCurrentUserId]!!.displayName + " participe à l'évènement " + mEventTitle,
                                         this
                                     )
-                                notification.SendNotification()
+                                notification.sendNotification()
                             }
                             else {
                                  Toast.makeText(
@@ -435,7 +435,7 @@ class EventActivity : AppCompatActivity() {
                                         userCacheInformation[mCurrentUserId]!!.displayName + " ne participe pas à l'évènement " + mEventTitle,
                                         this
                                     )
-                                notification.SendNotification()
+                                notification.sendNotification()
                             }
                         }
                 }
@@ -537,6 +537,7 @@ class EventActivity : AppCompatActivity() {
         retrievePot()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun displayChatPage() {
         val addButton = findViewById<ImageView>(R.id.add_button)
         addButton.visibility = View.GONE
@@ -726,10 +727,10 @@ class EventActivity : AppCompatActivity() {
                                                 FirebaseNotificationSender(
                                                     userCacheInformation[userId]!!.notificationToken,
                                                     "Mise à jour",
-                                                    "Des informations à propos de "+mEventTitle+" viennent d'être mise à jour",
+                                                    "Des informations à propos de $mEventTitle viennent d'être mise à jour",
                                                     this
                                                 )
-                                            notification.SendNotification()
+                                            notification.sendNotification()
                                         }
                                     }
                             }
@@ -1236,7 +1237,7 @@ class EventActivity : AppCompatActivity() {
                                                                             userCacheInformation[mCurrentUserId]!!.displayName+" a envoyé un message",
                                                                             this
                                                                         )
-                                                                    notification.SendNotification()
+                                                                    notification.sendNotification()
                                                                 }
                                                             }
                                                     }
@@ -1267,7 +1268,7 @@ class EventActivity : AppCompatActivity() {
                                                             userCacheInformation[organizerId]!!.displayName+" a envoyé un message sur " + mEventTitle,
                                                             this
                                                         )
-                                                    notification.SendNotification()
+                                                    notification.sendNotification()
                                                 }
                                             }
                                     }
