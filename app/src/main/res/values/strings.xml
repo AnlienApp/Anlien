@@ -75,5 +75,6 @@
     <string name="friends">Friends</string>
     <string name="home">Home</string>
     <string name="option">Option</string>
-    <string name="address_description">Adresse description</string>
+
+    <string name="image_description">Adresse description</string>
 </resources>

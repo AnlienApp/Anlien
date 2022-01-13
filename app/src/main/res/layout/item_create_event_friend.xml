@@ -27,7 +27,8 @@
         android:layout_height="50dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="@string/image_description"/>
 
     <TextView
         android:id="@+id/name"
@@ -62,18 +63,19 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-         />
+        android:contentDescription="@string/image_description" />
 
     <ImageView
         android:id="@+id/remove_participant"
         android:layout_width="40dp"
         android:layout_height="31dp"
-        android:layout_marginRight="5dp"
+        android:layout_marginEnd="5dp"
         android:alpha="0"
         android:visibility="gone"
         android:src="@drawable/checked"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="@string/image_description"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

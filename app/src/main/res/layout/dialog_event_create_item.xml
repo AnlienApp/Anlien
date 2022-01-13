@@ -17,7 +17,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="?android:attr/textColorPrimary"
-        app:srcCompat="@drawable/circular" />
+        app:srcCompat="@drawable/circular"
+        android:contentDescription="@string/image_description"/>
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/i_take_it_rounded"
@@ -29,7 +30,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="?android:attr/textColorPrimary"
-        app:srcCompat="@drawable/circular" />
+        app:srcCompat="@drawable/circular"
+        android:contentDescription="@string/image_description"/>
 
     <EditText
         android:id="@+id/name"
@@ -52,7 +54,8 @@
         android:layout_marginStart="15dp"
         app:layout_constraintBottom_toBottomOf="@+id/i_take_it"
         app:layout_constraintStart_toEndOf="@+id/i_take_it"
-        app:layout_constraintTop_toTopOf="@+id/i_take_it" />
+        app:layout_constraintTop_toTopOf="@+id/i_take_it"
+        android:autofillHints="Name" />
 
     <ImageView
         android:id="@+id/valid"
@@ -62,7 +65,8 @@
         app:layout_constraintBottom_toBottomOf="@+id/name"
         app:layout_constraintStart_toEndOf="@+id/name"
         app:layout_constraintTop_toTopOf="@+id/i_take_it"
-        app:srcCompat="@drawable/checked" />
+        app:srcCompat="@drawable/checked"
+        android:contentDescription="@string/image_description"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

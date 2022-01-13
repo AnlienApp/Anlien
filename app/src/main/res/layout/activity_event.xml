@@ -17,7 +17,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginLeft="15dp">
+            android:layout_marginStart="15dp">
 
             <ImageView
                 android:id="@+id/back"
@@ -27,13 +27,14 @@
                 app:tint="?android:attr/textColorPrimary"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
 
             <TextView
                 android:id="@+id/my_activity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="15dp"
+                android:layout_marginStart="15dp"
                 android:text="@string/chat"
                 android:textColor="?android:attr/textColorPrimary"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -50,7 +51,8 @@
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
 
             <ImageView
                 android:id="@+id/manage_participant"
@@ -62,7 +64,8 @@
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -107,7 +110,8 @@
                     app:counterEnabled="true"
                     app:counterMaxLength="15"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:autofillHints="Title" />
 
                 <TextView
                     android:id="@+id/date"
@@ -159,7 +163,8 @@
                         android:background="@drawable/circular_image_background"
                         android:backgroundTint="?android:attr/colorAccent"
                         android:padding="5dp"
-                        android:src="@drawable/ic_place" />
+                        android:src="@drawable/ic_place"
+                        android:contentDescription="@string/image_description" />
 
                     <EditText
                         android:id="@+id/address"
@@ -173,7 +178,8 @@
                         android:inputType="textVisiblePassword|textNoSuggestions"
                         android:padding="10dp"
                         android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp" />
+                        android:textSize="15sp"
+                        android:autofillHints="Address" />
 
                     <ImageView
                         android:id="@+id/go_to_map"
@@ -185,7 +191,8 @@
                         android:background="@drawable/circular_image_background"
                         android:backgroundTint="?android:attr/colorAccent"
                         android:padding="5dp"
-                        android:src="@drawable/ic_map" />
+                        android:src="@drawable/ic_map"
+                        android:contentDescription="@string/image_description" />
 
                 </LinearLayout>
 
@@ -207,7 +214,9 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/address_layout" />
+                    app:layout_constraintTop_toBottomOf="@+id/address_layout"
+                    tools:ignore="RtlHardcoded"
+                    android:autofillHints="Description" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -265,7 +274,8 @@
                             android:src="@drawable/checked"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:contentDescription="@string/image_description" />
 
                         <ImageView
                             android:id="@+id/questionButton"
@@ -276,7 +286,8 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toStartOf="@+id/cancelButton"
                             app:layout_constraintStart_toEndOf="@+id/presentButton"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:contentDescription="@string/image_description" />
 
                         <ImageView
                             android:id="@+id/cancelButton"
@@ -286,7 +297,8 @@
                             android:src="@drawable/cancel"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:contentDescription="@string/image_description" />
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -294,8 +306,7 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:id="@+id/organizer_menu"
-                        >
+                        android:id="@+id/organizer_menu">
 
                         <ImageView
                             android:id="@+id/update_button"
@@ -306,7 +317,8 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toStartOf="@+id/lock_unlock"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:contentDescription="@string/image_description" />
 
                         <ImageView
                             android:id="@+id/lock_unlock"
@@ -316,7 +328,8 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:contentDescription="@string/image_description" />
 
                         <ImageView
                             android:id="@+id/delete_button"
@@ -327,7 +340,8 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toEndOf="@+id/lock_unlock"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:contentDescription="@string/image_description" />
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -390,7 +404,8 @@
                 android:alpha="0.5"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
 
             <TextView
                 android:id="@+id/empty_people_list"
@@ -465,7 +480,8 @@
                 android:alpha="0.5"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
 
             <TextView
                 android:id="@+id/empty_shopping_list"
@@ -523,7 +539,8 @@
                 android:alpha="0.5"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
 
             <TextView
                 android:id="@+id/no_pot"
@@ -578,7 +595,9 @@
             android:paddingEnd="20dp"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:autofillHints="Message input"
+            android:inputType="text"/>
 
         <androidx.cardview.widget.CardView
             android:id="@+id/send_message_button"
@@ -599,7 +618,8 @@
                 app:tint="?android:attr/textColorPrimary"
                 android:backgroundTint="@android:color/transparent"
                 android:layout_gravity="center"
-                android:scaleType="centerCrop"/>
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/image_description" />
 
         </androidx.cardview.widget.CardView>
 
