@@ -76,5 +76,12 @@
     <string name="home">Home</string>
     <string name="option">Option</string>
 
-    <string name="image_description">Adresse description</string>
+    <string name="image_description">Image description</string>
+    <string name="compte">Compte</string>
+    <string name="import_picture">Importer une image</string>
+    <string name="start_travel">Demarrer le trajet vers la destination</string>
+    <string name="no_yet_participant">Vous ne participez pas encore à l\'évènement</string>
+    <string name="event_participant">Vous participez à l\'évènement</string>
+    <string name="event_not_particpant">Vous ne participez pas à l\'évènement</string>
+    <string name="event_organizer">Vous êtes l\'organisateur</string>
 </resources>

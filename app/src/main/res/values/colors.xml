@@ -8,5 +8,7 @@
     <color name="light_white">#959595</color>
     <color name="background">#2a3d43</color>
     <color name="background_editText">#243339</color>
-    <color name="notificationColor">#0073FF</color>
+    <color name="notificationColor">#FF0000</color>
+    <color name="red">#AA0000</color>
+    <color name="notificationBisColor">#00459A</color>
 </resources>

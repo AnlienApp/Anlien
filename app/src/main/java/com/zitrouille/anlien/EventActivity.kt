@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import android.widget.LinearLayout
+import com.zitrouille.anlien.MainActivity.Companion.applicationCurrentUserId
 
 class EventActivity : AppCompatActivity() {
 
@@ -171,6 +172,8 @@ class EventActivity : AppCompatActivity() {
                         .collection("events")
                         .document(userEventDoc.id).update(
                             "notification",
+                            false,
+                            "messageNotification",
                             false
                         )
                 }
@@ -280,34 +283,32 @@ class EventActivity : AppCompatActivity() {
                     displayInformationPage()
                 }
                 R.id.nav_participant -> {
-                    if(mPresence)
-                        displayParticipantPage()
-                    else
-                        Toast.makeText(applicationContext, "Vous ne participez pas (encore) à l'évènement", Toast.LENGTH_SHORT).show()
+                    displayParticipantPage()
                 }
                 R.id.nav_shopping -> {
-                    if(mPresence)
-                        displayShoppingPage()
-                    else
-                        Toast.makeText(applicationContext, "Vous ne participez pas (encore) à l'évènement", Toast.LENGTH_SHORT).show()
+                    displayShoppingPage()
                 }
                 R.id.nav_pot -> {
-                    if(mPresence)
-                        displayPotPage()
-                    else
-                        Toast.makeText(applicationContext, "Vous ne participez pas (encore) à l'évènement", Toast.LENGTH_SHORT).show()
+                    displayPotPage()
                 }
                 R.id.nav_chat -> {
-                    if(mPresence)
-                        displayChatPage()
-                    else
-                        Toast.makeText(applicationContext, "Vous ne participez pas (encore) à l'évènement", Toast.LENGTH_SHORT).show()
+                    displayChatPage()
                 }
             }
             true
         }
-        val informationView: View = bottomMenu.findViewById(R.id.nav_info)
-        informationView.performClick()
+
+        // Switch to the desired page
+        val page = intent.extras!!["page"].toString()
+        if("chat" == page)
+        {
+            val chatView: View = bottomMenu.findViewById(R.id.nav_chat)
+            chatView.performClick()
+        }
+        else if("info" == page){
+            val informationView: View = bottomMenu.findViewById(R.id.nav_info)
+            informationView.performClick()
+        }
     }
 
     private fun displayInformationPage() {
@@ -589,7 +590,7 @@ class EventActivity : AppCompatActivity() {
                     if(mPlaceId.isBlank() || mPlaceId.isEmpty())
                     {
                         val mapButton = findViewById<ImageView>(R.id.go_to_map)
-                        mapButton.setColorFilter(Color.argb(255, 255, 0, 0))
+                        mapButton.visibility = View.GONE
                     }
 
                     FirebaseFirestore.getInstance()
@@ -1215,6 +1216,7 @@ class EventActivity : AppCompatActivity() {
                                             if (!doc.exists()) continue
                                             val participantId: String =
                                                 doc.getString("userId").toString()
+                                            if(doc.getLong("status") != 0L) continue
                                             mDatabase!!.collection("users")
                                                 .document(participantId)
                                                 .collection("events")
@@ -1222,57 +1224,69 @@ class EventActivity : AppCompatActivity() {
                                                 .addOnSuccessListener { userEventDocs ->
                                                     for (userEventDoc in userEventDocs) {
                                                         if (!userEventDoc.exists()) continue
-                                                        mDatabase!!.collection("users")
-                                                            .document(participantId)
-                                                            .collection("events")
-                                                            .document(userEventDoc.id).update(
-                                                                "notification",
-                                                                true
-                                                            ).addOnSuccessListener {
-                                                                if(userCacheInformation.containsKey(participantId) && userCacheInformation.containsKey(mCurrentUserId)) {
-                                                                    val notification =
-                                                                        FirebaseNotificationSender(
-                                                                            userCacheInformation[participantId]!!.notificationToken,
-                                                                            mEventTitle,
-                                                                            userCacheInformation[mCurrentUserId]!!.displayName+" a envoyé un message",
-                                                                            this
+                                                        if(userEventDoc.id != applicationCurrentUserId) {
+                                                            mDatabase!!.collection("users")
+                                                                .document(participantId)
+                                                                .collection("events")
+                                                                .document(userEventDoc.id).update(
+                                                                    "messageNotification",
+                                                                    true,
+                                                                ).addOnSuccessListener {
+                                                                    if (userCacheInformation.containsKey(
+                                                                            participantId
+                                                                        ) && userCacheInformation.containsKey(
+                                                                            mCurrentUserId
                                                                         )
-                                                                    notification.sendNotification()
+                                                                    ) {
+                                                                        val notification =
+                                                                            FirebaseNotificationSender(
+                                                                                userCacheInformation[participantId]!!.notificationToken,
+                                                                                mEventTitle,
+                                                                                userCacheInformation[mCurrentUserId]!!.displayName + " a envoyé un message",
+                                                                                this
+                                                                            )
+                                                                        notification.sendNotification()
+                                                                    }
                                                                 }
-                                                            }
+                                                        }
                                                     }
                                                 }
                                         }
                                     }
                             // Send notification to the organizer
                             val organizerId = intent.extras!!["organizerId"].toString()
-                            mDatabase!!.collection("users")
-                                .document(organizerId)
-                                .collection("events")
-                                .whereEqualTo("eventId", mEventId).get()
-                                .addOnSuccessListener { userEventDocs ->
-                                    for (userEventDoc in userEventDocs) {
-                                        if (!userEventDoc.exists()) continue
-                                        mDatabase!!.collection("users")
-                                            .document(organizerId)
-                                            .collection("events")
-                                            .document(userEventDoc.id).update(
-                                                "notification",
-                                                true
-                                            ).addOnSuccessListener {
-                                                if(userCacheInformation.containsKey(organizerId) && userCacheInformation.containsKey(mCurrentUserId)) {
-                                                    val notification =
-                                                        FirebaseNotificationSender(
-                                                            userCacheInformation[organizerId]!!.notificationToken,
-                                                            "Message",
-                                                            userCacheInformation[organizerId]!!.displayName+" a envoyé un message sur " + mEventTitle,
-                                                            this
+                            if(organizerId != applicationCurrentUserId) {
+                                mDatabase!!.collection("users")
+                                    .document(organizerId)
+                                    .collection("events")
+                                    .whereEqualTo("eventId", mEventId).get()
+                                    .addOnSuccessListener { userEventDocs ->
+                                        for (userEventDoc in userEventDocs) {
+                                            if (!userEventDoc.exists()) continue
+                                            mDatabase!!.collection("users")
+                                                .document(organizerId)
+                                                .collection("events")
+                                                .document(userEventDoc.id).update(
+                                                    "messageNotification",
+                                                    true,
+                                                ).addOnSuccessListener {
+                                                    if (userCacheInformation.containsKey(organizerId) && userCacheInformation.containsKey(
+                                                            mCurrentUserId
                                                         )
-                                                    notification.sendNotification()
+                                                    ) {
+                                                        val notification =
+                                                            FirebaseNotificationSender(
+                                                                userCacheInformation[organizerId]!!.notificationToken,
+                                                                "Message",
+                                                                userCacheInformation[organizerId]!!.displayName + " a envoyé un message sur " + mEventTitle,
+                                                                this
+                                                            )
+                                                        notification.sendNotification()
+                                                    }
                                                 }
-                                            }
+                                        }
                                     }
-                                }
+                            }
                     }
                 }
             }

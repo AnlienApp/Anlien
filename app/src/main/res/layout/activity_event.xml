@@ -187,7 +187,6 @@
                         android:layout_height="35dp"
                         android:layout_gravity="center"
                         android:layout_marginStart="5dp"
-                        app:tint="@color/green"
                         android:background="@drawable/circular_image_background"
                         android:backgroundTint="?android:attr/colorAccent"
                         android:padding="5dp"

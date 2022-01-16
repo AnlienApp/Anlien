@@ -24,6 +24,9 @@
 
         <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
 
+        <item name="todayLabelColor">@color/notificationColor</item>
+        <item name="headerColor">@color/background</item>
+
     </style>
 
     <style name="MaterialCalendarTheme" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">

@@ -7,11 +7,10 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.view.Window
 import android.widget.*
 import androidmads.library.qrgenearator.QRGContents
 import androidmads.library.qrgenearator.QRGEncoder
@@ -32,6 +31,7 @@ import com.google.zxing.WriterException
 import com.zitrouille.anlien.databinding.ActivityHomepageBinding
 import java.io.ByteArrayOutputStream
 import android.provider.MediaStore
+import android.view.*
 import android.view.inputmethod.InputMethodManager
 import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doAfterTextChanged
@@ -45,14 +45,18 @@ import com.zitrouille.anlien.MainActivity.Companion.userCacheInformation
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import android.view.LayoutInflater
 import com.google.android.material.bottomnavigation.BottomNavigationItemView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.applandeo.materialcalendarview.CalendarDay
+import com.applandeo.materialcalendarview.EventDay
+import com.applandeo.materialcalendarview.listeners.OnDayClickListener
+
 
 class HomepageActivity : AppCompatActivity() {
 
     private var mActivityMainBinding: ActivityHomepageBinding? = null
     private var mEventArrayList: ArrayList<HomepageEvent>? = null
-    private var mEventHistoryArrayList: ArrayList<HomepageEvent>? = null
     private var mFriendArrayList: ArrayList<HomepageFriend>? = null
 
     private var mQRCodeResultLauncher: ActivityResultLauncher<Intent>? = null
@@ -71,8 +75,13 @@ class HomepageActivity : AppCompatActivity() {
     private var mDialog: Dialog? = null
 
     private var mDisplayEventHistory: Boolean = false
+    private var mDisplayCalendar: Boolean = false
 
     private var mFriendNotificationView: View? = null
+
+    private var mCalendars: MutableList<CalendarDay> = ArrayList()
+    private var bInitCalendar: Boolean = true
+    private var mCurrentEventIndex: Int = 0
 
     /**
      * Init different behaviors when user click on the bottom navigation menu
@@ -91,6 +100,7 @@ class HomepageActivity : AppCompatActivity() {
         initializeQrCodeCallback() // Callback manager
         initializeCreateEventCallback() // Callback manager
         initializeProfilePicture() // Personal profile picture
+        initiliazeBadge() // On badge click
         initializeQrCodeJoinEventCallback()
     }
 
@@ -129,6 +139,9 @@ class HomepageActivity : AppCompatActivity() {
     private fun initializeSwipeRefresh() {
         val eventListSwipe: PullRefreshLayout = findViewById(R.id.swipeRefreshListEvent)
         eventListSwipe.setOnRefreshListener {
+            bInitCalendar = true
+            val calendar = findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView)
+            calendar.selectedDates = listOf(Calendar.getInstance())
             retrieveEventList()
             eventListSwipe.setRefreshing(false)
         }
@@ -189,12 +202,89 @@ class HomepageActivity : AppCompatActivity() {
             Glide.with(applicationContext).load(currentUser.photoUrl)
                 .into(findViewById(R.id.profile_picture))
         }
+
+        findViewById<ConstraintLayout>(R.id.profile_picture_layout).setOnClickListener {
+
+            val dialog = Dialog(this)
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setCancelable(false)
+            dialog.setContentView(R.layout.dialog_homepage_edit_profile_picture)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+
+            dialog.findViewById<ImageView>(R.id.import_picture).setOnClickListener {
+                dialog.dismiss()
+                // start picker to get image for cropping and then use the image in cropping activity
+                 CropImage.activity()
+                     .setGuidelines(CropImageView.Guidelines.ON)
+                     .setCropShape(CropImageView.CropShape.OVAL)
+                     .setFixAspectRatio(true)
+                     .start(this)
+            }
+            dialog.show()
+        }
+    }
+
+    private fun initiliazeBadge() {
+        val badge = findViewById<ImageView>(R.id.main_user_badge)
+        badge.setOnClickListener {
+
+            // Retrieve list of available badges for the current user
+            mDatabase!!
+                .collection("users")
+                .document(mCurrentUserId)
+                .collection("badges")
+                .get().addOnSuccessListener { badges ->
+
+                    val badgeArrayList = ArrayList<HomepageBadge>()
+
+                    for(badgeDoc in badges) {
+                        if(!badgeDoc.exists()) continue
+                        badgeArrayList.add(HomepageBadge(badgeDoc["name"].toString()))
+                    }
+
+                    val dialog = Dialog(this)
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                    dialog.setCancelable(false)
+                    dialog.setContentView(R.layout.dialog_homepage_edit_badge)
+                    dialog.setCanceledOnTouchOutside(true)
+                    dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+
+                    val recyclerView: RecyclerView = dialog.findViewById(R.id.participant_list)
+                    val linearLayoutManager = LinearLayoutManager(applicationContext)
+                    linearLayoutManager.orientation = RecyclerView.HORIZONTAL
+                    recyclerView.layoutManager = linearLayoutManager
+                    recyclerView.setHasFixedSize(true)
+                    recyclerView.adapter = HomepageBadgeListAdapter(badgeArrayList)
+
+                    recyclerView.addOnItemTouchListener(RecyclerItemClickListener(this, recyclerView, object : RecyclerItemClickListener.OnItemClickListener {
+
+                        override fun onItemClick(view: View, position: Int) {
+                            mDatabase!!
+                                .collection("users")
+                                .document(mCurrentUserId)
+                                .update("displayedBadge", badgeArrayList[position].getName()).addOnSuccessListener {
+                                    Glide.with(applicationContext).load(MainActivity.retrieveBadgeLarge(badgeArrayList[position].getName()))
+                                        .into(findViewById(R.id.main_user_badge))
+                                    userCacheInformation[mCurrentUserId]!!.displayedBadge = badgeArrayList[position].getName()
+                                    dialog.dismiss()
+                                    Toast.makeText(applicationContext, "Badge mis à jour avec succès", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                        override fun onItemLongClick(view: View?, position: Int) {
+
+                        }
+                    }))
+                    dialog.show()
+                }
+        }
     }
 
     private fun initializeCreateEventCallback() {
-        mCreateEventCallback = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            retrieveEventList()
-        }
+        mCreateEventCallback =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                retrieveEventList()
+            }
     }
 
     private fun initializeQrCodeJoinEventCallback() {
@@ -538,6 +628,9 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.display_history).animate().alpha(1F).withEndAction {
                 findViewById<ImageView>(R.id.display_history).visibility = View.VISIBLE
             }
+            findViewById<ImageView>(R.id.display_calendar).animate().alpha(1F).withEndAction {
+                findViewById<ImageView>(R.id.display_calendar).visibility = View.VISIBLE
+            }
             findViewById<ImageView>(R.id.join_event).animate().alpha(1F).withEndAction {
                 findViewById<ImageView>(R.id.join_event).visibility = View.VISIBLE
             }
@@ -551,6 +644,9 @@ class HomepageActivity : AppCompatActivity() {
             }
             findViewById<ImageView>(R.id.display_history).animate().alpha(0F).withEndAction {
                 findViewById<ImageView>(R.id.display_history).visibility = View.GONE
+            }
+            findViewById<ImageView>(R.id.display_calendar).animate().alpha(0F).withEndAction {
+                findViewById<ImageView>(R.id.display_calendar).visibility = View.GONE
             }
             findViewById<ImageView>(R.id.join_event).animate().alpha(1F).withEndAction {
                 findViewById<ImageView>(R.id.join_event).visibility = View.GONE
@@ -617,7 +713,7 @@ class HomepageActivity : AppCompatActivity() {
 
         initFriendNotification()
 
-        if(null == mEventArrayList || null == mEventHistoryArrayList) {
+        if(null == mEventArrayList) {
 
             findViewById<ImageView>(R.id.join_event).setOnClickListener {
                 mQRCodeResultJoinEventLauncher!!.launch(Intent(this, ScannerActivity::class.java))
@@ -637,6 +733,42 @@ class HomepageActivity : AppCompatActivity() {
                 }
                 else {
                     findViewById<ImageView>(R.id.display_history).clearColorFilter()
+                }
+                retrieveEventList()
+            }
+            findViewById<ImageView>(R.id.display_calendar).setOnClickListener {
+                mDisplayCalendar = !mDisplayCalendar
+                if(mDisplayCalendar) {
+                    findViewById<ImageView>(R.id.display_calendar).clearColorFilter()
+                    findViewById<ImageView>(R.id.display_calendar).setColorFilter(R.attr.colorSecondary)
+                    val calendar = findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView)
+                    val calendars: MutableList<Calendar> = ArrayList()
+                    val appCalendar = Calendar.getInstance()
+                    calendars.add(appCalendar)
+                    calendar.selectedDates = calendars
+                    calendar.visibility = View.VISIBLE
+                    calendar.animate().alpha(1.0f).start()
+
+                    calendar.setOnDayClickListener(object : OnDayClickListener {
+                        override fun onDayClick(eventDay: EventDay) {
+                            for(calendarDay in mCalendars) {
+                                if(calendarDay.calendar.timeInMillis == eventDay.calendar.timeInMillis) {
+                                    calendarDay.backgroundResource = R.drawable.circular_image_background_red
+                                }
+                                else {
+                                    calendarDay.backgroundResource = R.drawable.round_corner_blue
+                                }
+                            }
+                            calendar.setCalendarDays(mCalendars)
+                            retrieveEventList()
+                        }
+                    })
+                }
+                else {
+                    findViewById<ImageView>(R.id.display_calendar).clearColorFilter()
+                    findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView).animate().alpha(0.0f).withEndAction {
+                        findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView).visibility = View.GONE
+                    }
                 }
                 retrieveEventList()
             }
@@ -822,7 +954,7 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.pseudo).text = userCacheInformation[mCurrentUserId]!!.identifiant
             findViewById<ImageView>(R.id.qr_code).setImageBitmap(generateQRCode(mCurrentUserId))
             if("none" != userCacheInformation[mCurrentUserId]!!.displayedBadge)
-                Glide.with(applicationContext).load(MainActivity.retrieveBadge(userCacheInformation[mCurrentUserId]!!.displayedBadge)).into(findViewById(R.id.main_user_badge))
+                Glide.with(applicationContext).load(MainActivity.retrieveBadgeLarge(userCacheInformation[mCurrentUserId]!!.displayedBadge)).into(findViewById(R.id.main_user_badge))
         }
         else {
             MainActivity.retrieveUserInformation(mCurrentUserId,
@@ -874,15 +1006,6 @@ class HomepageActivity : AppCompatActivity() {
         findViewById<ImageView>(R.id.logout).setOnClickListener {
             Firebase.auth.signOut()
             checkCurrentUser()
-        }
-
-        findViewById<ConstraintLayout>(R.id.profile_picture_layout).setOnClickListener {
-            // start picker to get image for cropping and then use the image in cropping activity
-            CropImage.activity()
-                .setGuidelines(CropImageView.Guidelines.ON)
-                .setCropShape(CropImageView.CropShape.OVAL)
-                .setFixAspectRatio(true)
-                .start(this)
         }
     }
 
@@ -1128,9 +1251,8 @@ class HomepageActivity : AppCompatActivity() {
         mActivityMainBinding!!.eventList.adapter = null
         if(null != mEventArrayList)
             mEventArrayList!!.clear()
-        if(null != mEventHistoryArrayList)
-            mEventHistoryArrayList!!.clear()
 
+        mCurrentEventIndex = 0
         mDatabase!!.collection("users")
             .document(mCurrentUserId)
             .collection("events")
@@ -1145,20 +1267,22 @@ class HomepageActivity : AppCompatActivity() {
                     findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.VISIBLE
                 }
                 else {
-                    mEventArrayList = ArrayList()
-                    mEventHistoryArrayList = ArrayList()
-                    for (doc in documents) {
-                        if (!doc.exists()) continue
 
+                    if(bInitCalendar)
+                        mCalendars = ArrayList()
+
+                    mEventArrayList = ArrayList()
+                    for (ii in 0 until documents.size()) {
+
+                        val doc = documents.documents[ii] ?: continue
                         var eventId = ""
                         if(doc.contains("eventId")) eventId = doc["eventId"].toString()
                         var bNotification = false
                         if(doc.contains("notification")) bNotification = doc["notification"] as Boolean
+                        var bMessageNotification = false
+                        if(doc.contains("messageNotification")) bMessageNotification = doc["messageNotification"] as Boolean
 
-                        var bLastEvent = false
-                        if(doc == documents.last()) bLastEvent = true
-
-                        retrieveEvent(eventId, bNotification, bLastEvent)
+                        retrieveEvent(eventId, bNotification, bMessageNotification, documents.size())
                     }
                     findViewById<ListView>(R.id.eventList).visibility = View.VISIBLE
                     findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.GONE
@@ -1171,15 +1295,44 @@ class HomepageActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun retrieveEvent(iEventId: String, ibNotification: Boolean, ibLastEvent: Boolean) {
+    private fun retrieveEvent(iEventId: String, ibNotification: Boolean, ibMessageNotification: Boolean, iNbEvent: Int) {
         mDatabase!!
             .collection("events")
             .document(iEventId)
             .get().addOnSuccessListener { eventDocument ->
+                mCurrentEventIndex++
                 if(eventDocument.exists()) {
 
                     var date = 0L
                     if(eventDocument.contains("date")) date = eventDocument["date"] as Long
+
+                    if(mDisplayCalendar) {
+                        if(bInitCalendar) {
+                            val eventDate = Calendar.getInstance()
+                            eventDate.timeInMillis = date
+                            mCalendars.add(CalendarDay(eventDate).apply {
+                                backgroundResource = R.drawable.round_corner_blue
+                                labelColor = R.color.white
+                            })
+                        }
+
+                        val appDate: Date = Calendar.getInstance().time
+                        val formatter = SimpleDateFormat("EEEE d MMMM yyyy")
+
+                        val calendar = findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView)
+                        val currentSelectedDate = calendar.firstSelectedDate.timeInMillis
+
+                        appDate.time = currentSelectedDate
+                        val calendarDateString = formatter.format(appDate).toString()
+
+                        appDate.time = date
+                        val eventDateString = formatter.format(appDate).toString()
+
+                        if(eventDateString != calendarDateString) {
+                            if(mCurrentEventIndex == iNbEvent) finishEventReception()
+                            return@addOnSuccessListener
+                        }
+                    }
 
                     val newDate: Date = Calendar.getInstance().time
                     val sdf = SimpleDateFormat("D")
@@ -1189,36 +1342,48 @@ class HomepageActivity : AppCompatActivity() {
 
                     newDate.time = System.currentTimeMillis()
                     val currentDayOfYear = sdf.format(newDate)
-
-                    if(mDisplayEventHistory && eventDayOfYear >= currentDayOfYear) {
-                        if(ibLastEvent) finishEventReception()
-                        return@addOnSuccessListener
-                    }
-                    else if(!mDisplayEventHistory && eventDayOfYear < currentDayOfYear) {
-                        if(ibLastEvent) finishEventReception()
-                        return@addOnSuccessListener
+                    if(!mDisplayCalendar) {
+                        if (mDisplayEventHistory && eventDayOfYear >= currentDayOfYear) {
+                            if (mCurrentEventIndex == iNbEvent) finishEventReception()
+                            return@addOnSuccessListener
+                        } else if (!mDisplayEventHistory && eventDayOfYear < currentDayOfYear) {
+                            if (mCurrentEventIndex == iNbEvent) finishEventReception()
+                            return@addOnSuccessListener
+                        }
                     }
 
                     val homepageEvent = HomepageEvent(
                         iEventId,
                         ibNotification,
-                        date
+                        ibMessageNotification,
+                        date,
+                        mDisplayCalendar
                     )
 
                     Log.i("Database request", "Event retrieved in HomepageActivity::retrieveEventList - "+eventDocument.id)
                     mEventArrayList!!.add(homepageEvent)
 
-                    if(ibLastEvent) finishEventReception()
+                    if(mCurrentEventIndex == iNbEvent) finishEventReception()
                 }
             }
     }
 
     private fun finishEventReception() {
         mEventArrayList!!.sortBy { it.getDate() }
+
         if(mDisplayEventHistory) mEventArrayList!!.reverse()
         mActivityMainBinding!!.eventList.adapter =
             HomepageEventListAdapter(this, mEventArrayList!!)
         mEventListReceptionRunning = false
+
+        if(mDisplayCalendar && bInitCalendar) {
+            val calendar =
+                findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView)
+            if (mDisplayCalendar) {
+                calendar.setCalendarDays(mCalendars)
+            }
+            bInitCalendar = false
+        }
     }
 
     /**
@@ -1250,5 +1415,47 @@ class HomepageActivity : AppCompatActivity() {
             initMemberData()
         }
     }
+
+    class RecyclerItemClickListener(context: Context, recyclerView: RecyclerView, private val mListener: OnItemClickListener?) : RecyclerView.OnItemTouchListener {
+
+        private val mGestureDetector: GestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                return true
+            }
+
+            override fun onLongPress(e: MotionEvent) {
+                val childView = recyclerView.findChildViewUnder(e.x, e.y)
+
+                if (childView != null && mListener != null) {
+                    mListener.onItemLongClick(childView, recyclerView.getChildAdapterPosition(childView))
+                }
+            }
+        })
+
+        interface OnItemClickListener {
+            fun onItemClick(view: View, position: Int)
+
+            fun onItemLongClick(view: View?, position: Int)
+        }
+
+        override fun onInterceptTouchEvent(view: RecyclerView, e: MotionEvent): Boolean {
+            val childView = view.findChildViewUnder(e.x, e.y)
+
+            if (childView != null && mListener != null && mGestureDetector.onTouchEvent(e)) {
+                mListener.onItemClick(childView, view.getChildAdapterPosition(childView))
+            }
+
+            return false
+        }
+
+        override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+            TODO("Not yet implemented")
+        }
+    }
+
 
 }

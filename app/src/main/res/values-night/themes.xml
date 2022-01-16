@@ -21,6 +21,14 @@
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/background_editText</item>
 
+        <item name="todayLabelColor">@color/notificationColor</item>
+        <item name="headerColor">@color/background</item>
+        <item name="abbreviationsBarColor">@color/background</item>
+        <item name="abbreviationsLabelsColor">@color/white_low</item>
+        <item name="anotherMonthsDaysLabelsColor">@color/light_white</item>
+        <item name="pagesColor">@color/background</item>
+        <item name="daysLabelsColor">@color/white_low</item>
+
     </style>
 
     <style name="MaterialCalendarTheme" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">

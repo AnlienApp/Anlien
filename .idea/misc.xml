@@ -6,6 +6,7 @@
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.3537037037037037" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/circular.xml" value="0.5661458333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/circular_image_background.xml" value="0.3675925925925926" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/circular_image_background_red.xml" value="0.37777777777777777" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_circle_add.xml" value="0.5661458333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_delete.xml" value="0.3638888888888889" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_launcher_background.xml" value="0.3537037037037037" />
@@ -13,6 +14,9 @@
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/ic_shopping.xml" value="0.3638888888888889" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/image.xml" value="0.48072916666666665" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/item_selector.xml" value="0.5661458333333333" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/layout_event_background_2.xml" value="0.33055555555555555" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/layout_event_background_3.xml" value="0.33055555555555555" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/layout_event_background_4.xml" value="0.33055555555555555" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/layout_rounded_background.xml" value="0.5661458333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/round_corner.xml" value="0.33897435897435896" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/drawable/round_corner_blue.xml" value="0.48072916666666665" />
@@ -27,8 +31,11 @@
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_create_event_friend_list.xml" value="0.5619791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_event_create_item.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_homepage_add_friend.xml" value="0.55" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_homepage_edit_badge.xml" value="0.55" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_homepage_edit_profile_picture.xml" value="0.3953125" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_homepage_join_event.xml" value="0.4395833333333333" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_main_create_pseudo.xml" value="0.5619791666666667" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_main_edit_badge.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_main_edit_pseudo.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/dialog_new_badge.xml" value="0.5447916666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_create_event_friend.xml" value="0.5619791666666667" />
@@ -38,9 +45,12 @@
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_event_chat_message_right.xml" value="0.4765625" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_event_participant.xml" value="0.5619791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_event_shopping.xml" value="0.3848958333333333" />
-        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_event.xml" value="0.46458333333333335" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_badge.xml" value="0.5619791666666667" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_event.xml" value="1.25" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_event_light.xml" value="0.5619791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_event_profile.xml" value="0.55" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_friend.xml" value="0.4" />
+        <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/item_homepage_profile_picture.xml" value="0.3953125" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/layout/notification_badge.xml" value="0.5447916666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/menu/create_event_item_menu.xml" value="0.4119791666666667" />
         <entry key="..\:/Users/andre/AndroidStudioProjects/Anlien/app/src/main/res/menu/event_item_menu.xml" value="0.55" />

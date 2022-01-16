@@ -43,20 +43,22 @@
                     android:id="@+id/search_friend"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
+                    android:contentDescription="@string/image_description"
                     android:src="@drawable/ic_search"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@+id/search_bar"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:tint="?android:attr/textColorPrimary"
-                    android:contentDescription="@string/image_description"/>
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <EditText
                     android:id="@+id/search_bar"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
                     android:alpha="0.8"
+                    android:autofillHints="Search bar"
                     android:background="@drawable/round_corner_small"
                     android:backgroundTint="?android:attr/textColorSecondary"
+                    android:inputType="text"
                     android:padding="5dp"
                     android:paddingStart="10dp"
                     android:textColor="?android:attr/textColorPrimary"
@@ -65,9 +67,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    tools:ignore="LabelFor,RtlSymmetry"
-                    android:autofillHints="Search bar"
-                    android:inputType="text" />
+                    tools:ignore="LabelFor,RtlSymmetry" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -75,12 +75,12 @@
                 android:id="@+id/join_event"
                 android:layout_width="26dp"
                 android:layout_height="29dp"
-                android:src="@drawable/ic_qr_scanner"
                 android:layout_marginEnd="20dp"
+                android:contentDescription="@string/image_description"
+                android:src="@drawable/ic_qr_scanner"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/create_event"
                 app:layout_constraintTop_toTopOf="parent"
-                android:contentDescription="@string/image_description"
                 app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
@@ -88,50 +88,62 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="20dp"
+                android:contentDescription="@string/image_description"
                 android:src="@drawable/ic_qr_scanner"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="?android:attr/textColorPrimary"
-                android:contentDescription="@string/image_description"/>
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/display_history"
                 android:layout_width="25dp"
                 android:layout_height="25dp"
-                android:src="@drawable/ic_history"
                 android:layout_marginEnd="20dp"
+                android:contentDescription="@string/image_description"
+                android:src="@drawable/ic_history"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/join_event"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="?android:attr/textColorPrimary"
-                android:contentDescription="@string/image_description"/>
+                app:tint="?android:attr/textColorPrimary" />
+
+            <ImageView
+                android:id="@+id/display_calendar"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_marginEnd="25dp"
+                android:contentDescription="@string/image_description"
+                android:src="@drawable/ic_calendar_view"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/display_history"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/create_event"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="20dp"
+                android:contentDescription="@string/image_description"
                 android:src="@drawable/ic_add"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="?android:attr/textColorPrimary"
-                android:contentDescription="@string/image_description"/>
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/logout"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="20dp"
+                android:contentDescription="@string/image_description"
                 android:src="@drawable/ic_logout"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="?android:attr/textColorPrimary"
-                android:contentDescription="@string/image_description"/>
+                app:tint="?android:attr/textColorPrimary" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -150,14 +162,29 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <ListView
-                android:id="@+id/eventList"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:divider="@android:color/transparent"
-                android:dividerHeight="5.0sp"/>
+                android:orientation="vertical">
+
+                <com.applandeo.materialcalendarview.CalendarView
+                    android:id="@+id/calendarView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:alpha="0"
+                    android:visibility="gone"/>
+
+                <ListView
+                    android:id="@+id/eventList"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:divider="@android:color/transparent"
+                    android:dividerHeight="5.0sp" />
+
+            </LinearLayout>
 
         </com.baoyz.widget.PullRefreshLayout>
 
@@ -325,6 +352,7 @@
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 android:src="@drawable/unknown"
+                android:background="@drawable/default_user"
                 android:alpha="0.6"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -370,12 +398,11 @@
 
                 <ImageView
                     android:id="@+id/main_user_badge"
-                    android:layout_width="150dp"
-                    android:layout_height="150dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    android:contentDescription="@string/image_description"/>
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:contentDescription="@string/image_description"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

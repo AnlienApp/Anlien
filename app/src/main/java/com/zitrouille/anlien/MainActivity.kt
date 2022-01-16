@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Contains a cache list of all users already retrieved.
      */
     companion object {
+        var applicationCurrentUserId = ""
         var userCacheInformation = HashMap<String, UserInformation>()
 
         class UserInformation {
@@ -92,13 +93,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     userCache.notificationToken = doc["notificationToken"].toString()
 
                     if("none" != doc["displayedBadge"]) {
-                        FirebaseFirestore.getInstance()
-                            .collection("users")
-                            .document(iUserId).collection("badges")
-                            .document(doc["displayedBadge"].toString())
-                            .get().addOnSuccessListener { badgeDoc ->
-                                userCache.displayedBadge = badgeDoc["name"].toString()
-                            }
+                        userCache.displayedBadge = doc["displayedBadge"].toString()
                     }
 
                     if(null != iDisplayNameView) {
@@ -106,7 +101,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     }
 
                     if(null != iIdentifiantView) {
-                        iIdentifiantView.text = userCache.displayName
+                        iIdentifiantView.text = userCache.identifiant
                     }
 
                     if(null != iBadgeView) {
@@ -251,16 +246,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         userCache.displayName = doc["displayName"] as String
                         userCache.identifiant = doc["identifiant"] as String
                         userCache.notificationToken = doc["notificationToken"] as String
-
-                        if("none" != doc["displayedBadge"]) {
-                            FirebaseFirestore.getInstance()
-                                .collection("users")
-                                .document(currentUser.uid).collection("badges")
-                                .document(doc["displayedBadge"].toString())
-                                .get().addOnSuccessListener { badgeDoc ->
-                                    userCache.displayedBadge = badgeDoc["name"].toString()
-                                }
-                        }
+                        userCache.displayedBadge = doc["displayedBadge"].toString()
+                        applicationCurrentUserId = currentUser.uid
 
                         val userId = currentUser.uid
                         val storageRef: StorageReference = FirebaseStorage.getInstance().reference
