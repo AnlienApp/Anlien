@@ -85,4 +85,11 @@
     <string name="event_not_particpant">Vous ne participez pas à l\'évènement</string>
     <string name="event_organizer">Organisateur de l\'évènement</string>
     <string name="update">Mettre à jour l\'évènement</string>
+    <string name="badge_update_success">Badge mis à jour avec succès</string>
+    <string name="you">C\'est vous !</string>
+    <string name="friend_request_already_done">Demande déjà envoyée</string>
+    <string name="already_friends">Vous êtes déjà amis</string>
+    <string name="ask">Demande</string>
+    <string name="want_to_be_your_friend">\" souhaite être votre ami\"</string>
+    <string name="update_failure">Echec de la mise à jour</string>
 </resources>

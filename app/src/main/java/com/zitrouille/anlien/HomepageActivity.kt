@@ -7,7 +7,6 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -69,7 +68,7 @@ class HomepageActivity : AppCompatActivity() {
     private var mDatabase: FirebaseFirestore? = null
     private var mStorage: FirebaseStorage? = null
 
-    private var mfriendListReceptionRunning = false
+    private var mFriendListReceptionRunning = false
     private var mEventListReceptionRunning = false
 
     private var mDialog: Dialog? = null
@@ -100,7 +99,7 @@ class HomepageActivity : AppCompatActivity() {
         initializeQrCodeCallback() // Callback manager
         initializeCreateEventCallback() // Callback manager
         initializeProfilePicture() // Personal profile picture
-        initiliazeBadge() // On badge click
+        initializeBadge() // On badge click
         initializeQrCodeJoinEventCallback()
     }
 
@@ -184,7 +183,7 @@ class HomepageActivity : AppCompatActivity() {
                     displayFriendPage()
                 }
                 R.id.nav_option -> {
-                    displayPersonnalProfilePage()
+                    displayPersonalProfilePage()
                 }
             }
             true
@@ -225,7 +224,7 @@ class HomepageActivity : AppCompatActivity() {
         }
     }
 
-    private fun initiliazeBadge() {
+    private fun initializeBadge() {
         val badge = findViewById<ImageView>(R.id.main_user_badge)
         badge.setOnClickListener {
 
@@ -268,7 +267,7 @@ class HomepageActivity : AppCompatActivity() {
                                         .into(findViewById(R.id.main_user_badge))
                                     userCacheInformation[mCurrentUserId]!!.displayedBadge = badgeArrayList[position].getName()
                                     dialog.dismiss()
-                                    Toast.makeText(applicationContext, "Badge mis à jour avec succès", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(applicationContext, getString(R.string.badge_update_success), Toast.LENGTH_SHORT).show()
                                 }
                         }
                         override fun onItemLongClick(view: View?, position: Int) {
@@ -532,7 +531,7 @@ class HomepageActivity : AppCompatActivity() {
             addFriendImageView.visibility = View.GONE
             yourselfImageView.visibility = View.VISIBLE
             yourselfImageView.setOnClickListener { currentView ->
-                Snackbar.make(currentView, "C'est vous !", Snackbar.LENGTH_LONG)
+                Snackbar.make(currentView, getString(R.string.you), Snackbar.LENGTH_LONG)
                     .show()
             }
         }
@@ -554,7 +553,7 @@ class HomepageActivity : AppCompatActivity() {
                         mAddFriendDialog!!.findViewById(R.id.friend_pending) as ImageView
                     friendPendingImageView.visibility = View.VISIBLE
                     friendPendingImageView.setOnClickListener { currentView ->
-                        Snackbar.make(currentView, "Demande déjà envoyée", Snackbar.LENGTH_LONG)
+                        Snackbar.make(currentView, getString(R.string.friend_request_already_done), Snackbar.LENGTH_LONG)
                             .show()
                     }
                 } else {
@@ -563,7 +562,7 @@ class HomepageActivity : AppCompatActivity() {
                         mAddFriendDialog!!.findViewById(R.id.friend_added) as ImageView
                     friendAddedImageView.visibility = View.VISIBLE
                     friendAddedImageView.setOnClickListener { currentView ->
-                        Snackbar.make(currentView, "Vous êtes déjà amis", Snackbar.LENGTH_LONG)
+                        Snackbar.make(currentView, getString(R.string.already_friends), Snackbar.LENGTH_LONG)
                             .show()
                     }
                 }
@@ -605,8 +604,8 @@ class HomepageActivity : AppCompatActivity() {
                     val notification =
                         FirebaseNotificationSender(
                             userCacheInformation[iUserId]!!.notificationToken,
-                            "Demande",
-                            userCacheInformation[mCurrentUserId]!!.displayName + " souhaite être votre ami",
+                            getString(R.string.ask),
+                            userCacheInformation[mCurrentUserId]!!.displayName + getString(R.string.want_to_be_your_friend),
                             this
                         )
                     notification.sendNotification()
@@ -659,7 +658,7 @@ class HomepageActivity : AppCompatActivity() {
         }
     }
 
-    private fun friendpageVisibility(ibValue : Boolean) {
+    private fun friendPageVisibility(ibValue : Boolean) {
         if(ibValue) {
             findViewById<RelativeLayout>(R.id.friendPage).animate().alpha(1F).withEndAction {
                 findViewById<RelativeLayout>(R.id.friendPage).visibility = View.VISIBLE
@@ -688,7 +687,7 @@ class HomepageActivity : AppCompatActivity() {
         hideFriendSearchBar(false)
     }
 
-    private fun userpageVisibility(ibValue : Boolean) {
+    private fun userPageVisibility(ibValue : Boolean) {
         if(ibValue) {
             findViewById<RelativeLayout>(R.id.mainUserPage).animate().alpha(1F).withEndAction {
                 findViewById<RelativeLayout>(R.id.mainUserPage).visibility = View.VISIBLE
@@ -710,8 +709,8 @@ class HomepageActivity : AppCompatActivity() {
     private fun displayEventListPage() {
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.my_activity)
         homepageVisibility(true)
-        friendpageVisibility(false)
-        userpageVisibility(false)
+        friendPageVisibility(false)
+        userPageVisibility(false)
         findViewById<RelativeLayout>(R.id.mainUserPage).animate().alpha(0F).withEndAction {
             findViewById<RelativeLayout>(R.id.mainUserPage).visibility = View.GONE
         }
@@ -789,8 +788,8 @@ class HomepageActivity : AppCompatActivity() {
     private fun displayFriendPage() {
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.my_friends)
         homepageVisibility(false)
-        friendpageVisibility(true)
-        userpageVisibility(false)
+        friendPageVisibility(true)
+        userPageVisibility(false)
 
         if(null != mFriendNotificationView) {
             val bottomMenu = findViewById<BottomNavigationView>(R.id.bottom_navigation)
@@ -951,11 +950,11 @@ class HomepageActivity : AppCompatActivity() {
     }
 
     @SuppressLint("CutPasteId")
-    private fun displayPersonnalProfilePage() {
+    private fun displayPersonalProfilePage() {
         findViewById<TextView>(R.id.my_activity).text = getString(R.string.my_options)
         homepageVisibility(false)
-        friendpageVisibility(false)
-        userpageVisibility(true)
+        friendPageVisibility(false)
+        userPageVisibility(true)
 
         initFriendNotification()
 
@@ -1033,13 +1032,13 @@ class HomepageActivity : AppCompatActivity() {
     }
 
     private fun uploadImageToProfile(iBitmap: Bitmap) {
-        val baos = ByteArrayOutputStream()
-        iBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        iBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
         val uid: String = mCurrentUserId
         val storageRef: StorageReference = mStorage!!.reference
             .child("profileImages")
             .child("$uid.jpeg")
-        storageRef.putBytes(baos.toByteArray()).addOnSuccessListener {
+        storageRef.putBytes(byteArrayOutputStream.toByteArray()).addOnSuccessListener {
             getDownloadUrl(storageRef)
         }
     }
@@ -1056,7 +1055,7 @@ class HomepageActivity : AppCompatActivity() {
             Toast.makeText(this, "Photo mise à jour", Toast.LENGTH_LONG).show()
             Glide.with(applicationContext).load(iUri).into(findViewById(R.id.profile_picture))
         }.addOnFailureListener {
-            Toast.makeText(this, "Echec de la mise à jour", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.update_failure), Toast.LENGTH_LONG).show()
         }
         val uid: String = mCurrentUserId
         if(userCacheInformation.containsKey(uid)) {
@@ -1070,9 +1069,9 @@ class HomepageActivity : AppCompatActivity() {
      * from the firebase database. Be carefully and call it only only when necessary.
      */
     fun retrieveFriendList() {
-        if(mfriendListReceptionRunning)
+        if(mFriendListReceptionRunning)
             return
-        mfriendListReceptionRunning = true
+        mFriendListReceptionRunning = true
         // At first clean the previous list if exists
         mActivityMainBinding!!.friendList.adapter = null
         if(null != mFriendArrayList)
@@ -1093,7 +1092,7 @@ class HomepageActivity : AppCompatActivity() {
                 mFriendArrayList = ArrayList()
 
                 if(0 == documents.size()) {
-                    mfriendListReceptionRunning = false
+                    mFriendListReceptionRunning = false
                     findViewById<ListView>(R.id.friendList).visibility = View.GONE
                     findViewById<ConstraintLayout>(R.id.friendListEmpty).visibility = View.VISIBLE
                     findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.GONE
@@ -1115,7 +1114,7 @@ class HomepageActivity : AppCompatActivity() {
                         if(mFriendArrayList!!.size == documents.size()) {
                             mFriendArrayList!!.sortBy { it.getIdentifiant() }
                             mActivityMainBinding!!.friendList.adapter = HomepageFriendListAdapter(this, mFriendArrayList!!)
-                            mfriendListReceptionRunning = false
+                            mFriendListReceptionRunning = false
                         }
                         else {
                             continue
@@ -1151,7 +1150,7 @@ class HomepageActivity : AppCompatActivity() {
                             mFriendArrayList!!.sortBy { it.getIdentifiant() }
                             mActivityMainBinding!!.friendList.adapter =
                                 HomepageFriendListAdapter(this, mFriendArrayList!!)
-                            mfriendListReceptionRunning = false
+                            mFriendListReceptionRunning = false
                         }
                     }
                     else {
@@ -1204,7 +1203,7 @@ class HomepageActivity : AppCompatActivity() {
                                         mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                         mActivityMainBinding!!.friendList.adapter =
                                             HomepageFriendListAdapter(this, mFriendArrayList!!)
-                                        mfriendListReceptionRunning = false
+                                        mFriendListReceptionRunning = false
                                     }
                                 }.addOnFailureListener {
                                     var bShouldBeValid = false
@@ -1230,7 +1229,7 @@ class HomepageActivity : AppCompatActivity() {
                                         mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                         mActivityMainBinding!!.friendList.adapter =
                                             HomepageFriendListAdapter(this, mFriendArrayList!!)
-                                        mfriendListReceptionRunning = false
+                                        mFriendListReceptionRunning = false
                                     }
                                 }
 
@@ -1240,13 +1239,13 @@ class HomepageActivity : AppCompatActivity() {
                                     mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                     mActivityMainBinding!!.friendList.adapter =
                                         HomepageFriendListAdapter(this, mFriendArrayList!!)
-                                    mfriendListReceptionRunning = false
+                                    mFriendListReceptionRunning = false
                                 }
                             }
                     }
                 }
             }.addOnFailureListener {
-                mfriendListReceptionRunning = false
+                mFriendListReceptionRunning = false
                 findViewById<ListView>(R.id.friendList).visibility = View.GONE
                 findViewById<ImageView>(R.id.friendListEmpty).visibility = View.VISIBLE
                 findViewById<ConstraintLayout>(R.id.friendListSearchIssue).visibility = View.GONE
