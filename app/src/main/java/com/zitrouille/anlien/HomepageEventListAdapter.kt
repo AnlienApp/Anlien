@@ -71,7 +71,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                 if(eventDoc.getString("organizerId") == MainActivity.applicationCurrentUserId)
                 {
                     Glide.with(view.context)
-                        .load(R.drawable.organizer)
+                        .load(R.drawable.main_organizer)
                         .into(view.findViewById(R.id.presence))
                     view.findViewById<ImageView>(R.id.presence).visibility = View.VISIBLE
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -140,6 +140,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                         mEventProfileArrayList = null
                         mEventProfileArrayList = ArrayList()
                         mEventProfileArrayList!!.add(HomepageEventProfile(eventDoc["organizerId"].toString(), bLightVisu)) // Organizer
+                        var currentUserRole = 0L // Organizer or simple participant
                         if(participants.size() != 0) {
                             for (ii in 0 until participants.size()) {
                                 val participant = participants.documents[ii] ?: continue
@@ -150,6 +151,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                                 val participantPresence = participant["status"] as Long
                                 if(participant["userId"].toString() == MainActivity.applicationCurrentUserId)
                                 {
+                                    currentUserRole = participant["role"] as Long
                                     val presentImageView = view.findViewById<ImageView>(R.id.presence)
                                     if(1L == participantPresence) // Not decided
                                     {
@@ -178,7 +180,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                                 if(participantPresence != 0L) continue
 
                                 val eventProfile = HomepageEventProfile(participant["userId"].toString(), bLightVisu) // User
-                                if (mEventProfileArrayList!!.size > 3) {
+                                if (mEventProfileArrayList!!.size > 2) {
                                     eventProfile.setRemainingProfile(participants.size() - ii)
                                     mEventProfileArrayList!!.add(eventProfile)
                                     break
@@ -213,6 +215,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                             intent.putExtra("eventId", eventId)
                             intent.putExtra("page", "info")
                             intent.putExtra("organizerId", eventDoc["organizerId"].toString())
+                            intent.putExtra("role", currentUserRole)
                             view.context.startActivity(intent)
                         }
 
@@ -223,6 +226,7 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                             intent.putExtra("eventId", eventId)
                             intent.putExtra("page", "chat")
                             intent.putExtra("organizerId", eventDoc["organizerId"].toString())
+                            intent.putExtra("role", currentUserRole)
                             view.context.startActivity(intent)
                         }
 
@@ -253,10 +257,16 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                         iView.findViewById<TextView>(R.id.title).animate().apply {
                             alpha(0F)
                         }.start()
-                        iView.findViewById<TextView>(R.id.presence).animate().apply {
+                        iView.findViewById<ImageView>(R.id.presence).animate().apply {
                             alpha(0F)
                         }.start()
-                        iView.findViewById<TextView>(R.id.notification).animate().apply {
+                        iView.findViewById<ImageView>(R.id.chat_button).animate().apply {
+                            alpha(0F)
+                        }.start()
+                        iView.findViewById<ImageView>(R.id.waze).animate().apply {
+                            alpha(0F)
+                        }.start()
+                        iView.findViewById<ImageView>(R.id.notification).animate().apply {
                             alpha(0F)
                         }.start()
                         iView.findViewById<LinearLayout>(R.id.date_layout).animate().apply {
@@ -279,10 +289,16 @@ class HomepageEventListAdapter(private val iContext : Activity, private val iArr
                         iView.findViewById<TextView>(R.id.title).animate().apply {
                             alpha(1F)
                         }.start()
-                        iView.findViewById<TextView>(R.id.presence).animate().apply {
+                        iView.findViewById<ImageView>(R.id.presence).animate().apply {
                             alpha(1F)
                         }.start()
-                        iView.findViewById<TextView>(R.id.notification).animate().apply {
+                        iView.findViewById<ImageView>(R.id.chat_button).animate().apply {
+                            alpha(1F)
+                        }.start()
+                        iView.findViewById<ImageView>(R.id.waze).animate().apply {
+                            alpha(1F)
+                        }.start()
+                        iView.findViewById<ImageView>(R.id.notification).animate().apply {
                             alpha(1F)
                         }.start()
                         iView.findViewById<LinearLayout>(R.id.date_layout).animate().apply {

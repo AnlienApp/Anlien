@@ -11,4 +11,5 @@
     <color name="notificationColor">#FF0000</color>
     <color name="red">#AA0000</color>
     <color name="notificationBisColor">#00459A</color>
+    <color name="orange">#FF9900</color>
 </resources>

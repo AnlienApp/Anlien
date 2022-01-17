@@ -83,5 +83,6 @@
     <string name="no_yet_participant">Vous ne participez pas encore à l\'évènement</string>
     <string name="event_participant">Vous participez à l\'évènement</string>
     <string name="event_not_particpant">Vous ne participez pas à l\'évènement</string>
-    <string name="event_organizer">Vous êtes l\'organisateur</string>
+    <string name="event_organizer">Organisateur de l\'évènement</string>
+    <string name="update">Mettre à jour l\'évènement</string>
 </resources>

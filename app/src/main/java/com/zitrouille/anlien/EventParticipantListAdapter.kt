@@ -1,9 +1,11 @@
 package com.zitrouille.anlien
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Dialog
 import android.content.ContentValues
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -38,6 +40,8 @@ class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipan
 
         val ghostView: ImageView = view.findViewById(R.id.ghost)
         val mainLayout: ConstraintLayout = view.findViewById(R.id.main_layout)
+
+        val subOrganizer: ImageView = view.findViewById(R.id.sub_organizer)
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
@@ -49,6 +53,7 @@ class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipan
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         val userId = dataSet[position].getUserId()
         val eventId = dataSet[position].getEventId()
+        val participantDoc = dataSet[position].getParticipantDoc()
         if(userCacheInformation.containsKey(userId)) {
             viewHolder.displayNameTextView.text = userCacheInformation[userId]!!.displayName
             viewHolder.identifiantTextView.text = userCacheInformation[userId]!!.identifiant
@@ -75,6 +80,74 @@ class EventParticipantListAdapter(private val dataSet: ArrayList<EventParticipan
             }
             2L -> {
                 viewHolder.cancelImageView.visibility = View.VISIBLE
+            }
+            3L -> {
+                viewHolder.validImageView.visibility = View.VISIBLE
+                Glide.with(viewHolder.itemView.context).load(R.drawable.main_organizer).into(viewHolder.validImageView)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    viewHolder.validImageView.tooltipText = viewHolder.itemView.context.getString(
+                        R.string.event_organizer)
+                }
+            }
+        }
+
+        var subOrganizer = false
+        if(1L == dataSet[position].getRole()) {
+            subOrganizer = true
+            viewHolder.subOrganizer.visibility = View.VISIBLE
+            Glide.with(viewHolder.itemView.context).load(R.drawable.sub_organizer).into(viewHolder.subOrganizer)
+        }
+        if(dataSet[position].getMoreMenu()) {
+            viewHolder.subOrganizer.visibility = View.VISIBLE
+            viewHolder.subOrganizer.setOnClickListener {
+                subOrganizer = !subOrganizer
+                var role = 0L
+                if(subOrganizer) role = 1L
+                FirebaseFirestore.getInstance()
+                    .collection("events")
+                    .document(eventId)
+                    .collection("participants")
+                    .document(participantDoc)
+                    .update("role", role).addOnSuccessListener {
+                        if(subOrganizer) {
+                            viewHolder.subOrganizer.animate().rotation(viewHolder.subOrganizer.rotation+360.0f).withEndAction {
+                                Glide.with(viewHolder.itemView.context).load(R.drawable.sub_organizer)
+                                    .into(viewHolder.subOrganizer)
+                                Toast.makeText(
+                                    viewHolder.itemView.context,
+                                    viewHolder.displayNameTextView.text.toString() + " est désormais co organisateur de l'évènement",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }.start()
+                            val notification =
+                                FirebaseNotificationSender(
+                                    userCacheInformation[userId]!!.notificationToken,
+                                    dataSet[position].getEventName(),
+                                    "Vous êtes co organisateur de l'évènement",
+                                    viewHolder.itemView.context as Activity
+                                )
+                            notification.sendNotification()
+                        }
+                        else {
+                            viewHolder.subOrganizer.animate().rotation(viewHolder.subOrganizer.rotation+360.0f).withEndAction {
+                                Glide.with(viewHolder.itemView.context).load(R.drawable.couronne_dot)
+                                    .into(viewHolder.subOrganizer)
+                                Toast.makeText(
+                                    viewHolder.itemView.context,
+                                    viewHolder.displayNameTextView.text.toString() + " n'est désormais plus co organisateur de l'évènement",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }.start()
+                            val notification =
+                                FirebaseNotificationSender(
+                                    userCacheInformation[userId]!!.notificationToken,
+                                    dataSet[position].getEventName(),
+                                    "Vous n'êtes plus co organisateur de l'évènement",
+                                    viewHolder.itemView.context as Activity
+                                )
+                            notification.sendNotification()
+                        }
+                    }
             }
         }
 

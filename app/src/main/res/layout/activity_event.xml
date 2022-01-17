@@ -42,6 +42,32 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
+                android:id="@+id/lock_button"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_lock"
+                app:tint="?android:attr/textColorPrimary"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/delete_button"
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
+
+            <ImageView
+                android:id="@+id/delete_button"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_delete"
+                app:tint="?android:attr/textColorPrimary"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/image_description" />
+
+            <ImageView
                 android:id="@+id/add_button"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
@@ -76,7 +102,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.825"
+        android:layout_weight="0.86"
         android:id="@+id/informationPage">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -105,7 +131,6 @@
                     android:maxLines="1"
                     android:padding="10dp"
                     android:textColor="?android:attr/textColorPrimary"
-                    android:backgroundTint="?android:attr/textColorSecondary"
                     android:textSize="20sp"
                     app:counterEnabled="true"
                     app:counterMaxLength="15"
@@ -122,7 +147,6 @@
                     android:gravity="center"
                     android:padding="10dp"
                     android:textColor="?android:attr/textColorPrimary"
-                    android:backgroundTint="?android:attr/textColorSecondary"
                     android:textSize="20sp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/title" />
@@ -136,7 +160,6 @@
                     android:gravity="center"
                     android:padding="10dp"
                     android:textColor="?android:attr/textColorPrimary"
-                    android:backgroundTint="?android:attr/textColorSecondary"
                     android:textSize="20sp"
                     app:layout_constraintEnd_toEndOf="@+id/date"
                     app:layout_constraintStart_toStartOf="@+id/date"
@@ -173,7 +196,6 @@
                         android:layout_weight="1"
                         android:layout_gravity="center"
                         android:background="@drawable/round_corner_small"
-                        android:backgroundTint="?android:attr/textColorSecondary"
                         android:hint="@string/event_address"
                         android:inputType="textVisiblePassword|textNoSuggestions"
                         android:padding="10dp"
@@ -201,7 +223,6 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="20dp"
                     android:background="@drawable/round_corner_small"
-                    android:backgroundTint="?android:attr/textColorSecondary"
                     android:gravity="top|left"
                     android:hint="@string/description"
                     android:inputType="textVisiblePassword|textNoSuggestions|textMultiLine"
@@ -221,19 +242,12 @@
 
 
             <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/presenceLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/presenceLayout"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/update_event_button"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@android:color/darker_gray"
-                    app:layout_constraintBottom_toTopOf="@+id/textView3"
-                    app:layout_constraintStart_toStartOf="parent" />
 
                 <TextView
                     android:id="@+id/textView3"
@@ -258,105 +272,66 @@
                     app:layout_constraintStart_toStartOf="parent">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/user_menu"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:paddingStart="20dp"
-                        android:paddingEnd="20dp"
-                        android:visibility="gone"
-                        android:id="@+id/user_menu">
+                        android:paddingEnd="20dp">
 
                         <ImageView
                             android:id="@+id/presentButton"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:alpha="0.3"
+                            android:contentDescription="@string/image_description"
                             android:src="@drawable/checked"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            android:contentDescription="@string/image_description" />
+                            app:layout_constraintTop_toTopOf="parent" />
 
                         <ImageView
                             android:id="@+id/questionButton"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:alpha="0.8"
+                            android:contentDescription="@string/image_description"
                             android:src="@drawable/question"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toStartOf="@+id/cancelButton"
                             app:layout_constraintStart_toEndOf="@+id/presentButton"
-                            app:layout_constraintTop_toTopOf="parent"
-                            android:contentDescription="@string/image_description" />
+                            app:layout_constraintTop_toTopOf="parent" />
 
                         <ImageView
                             android:id="@+id/cancelButton"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:alpha="0.3"
+                            android:contentDescription="@string/image_description"
                             android:src="@drawable/cancel"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            android:contentDescription="@string/image_description" />
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:id="@+id/organizer_menu">
-
-                        <ImageView
-                            android:id="@+id/update_button"
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:alpha="0.8"
-                            android:src="@drawable/update_event"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/lock_unlock"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            android:contentDescription="@string/image_description" />
-
-                        <ImageView
-                            android:id="@+id/lock_unlock"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
-                            android:src="@drawable/unlock"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            android:contentDescription="@string/image_description" />
-
-                        <ImageView
-                            android:id="@+id/delete_button"
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:alpha="0.8"
-                            android:src="@drawable/delete_event"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@+id/lock_unlock"
-                            app:layout_constraintTop_toTopOf="parent"
-                            android:contentDescription="@string/image_description" />
+                            app:layout_constraintTop_toTopOf="parent" />
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-                <View
-                    android:id="@+id/view"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@android:color/darker_gray"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    tools:layout_editor_absoluteX="20dp" />
-
-
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <TextView
+                android:id="@+id/update_event_button"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:visibility="gone"
+                android:background="@drawable/round_corner_small_warning"
+                android:gravity="center"
+                android:text="@string/update"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -367,7 +342,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.825"
+        android:layout_weight="0.86"
         android:visibility="gone"
         android:id="@+id/participantPage">
 
@@ -442,7 +417,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.825"
+        android:layout_weight="0.86"
         android:visibility="gone"
         android:id="@+id/shoppingPage">
 
@@ -519,7 +494,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.825"
+        android:layout_weight="0.86"
         android:visibility="gone"
         android:id="@+id/potPage">
 
@@ -625,24 +600,32 @@
     </RelativeLayout>
     <!-- Chat END -->
 
-
+    <!-- This part is used in all pages form the activity -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:id="@+id/bottom_navigation_layout"
         android:layout_height="0dp"
-        android:layout_weight="0.115">
+        android:layout_weight="0.08">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottom_navigation"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentBottom="true"
-            android:background="?android:colorPrimary"
-            app:itemIconSize="35dp"
-            app:itemIconTint="@drawable/item_selector"
-            app:labelVisibilityMode="unlabeled"
-            app:menu="@menu/event_item_menu" />
+            android:layout_height="match_parent">
+
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/bottom_navigation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentBottom="true"
+                android:background="?android:colorPrimary"
+                app:itemIconSize="32dp"
+                app:itemIconTint="@drawable/item_selector"
+                app:labelVisibilityMode="unlabeled"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:menu="@menu/event_item_menu" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </RelativeLayout>
 

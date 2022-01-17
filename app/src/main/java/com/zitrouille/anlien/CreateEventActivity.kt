@@ -203,6 +203,7 @@ class CreateEventActivity : AppCompatActivity() {
                                     val participantData = hashMapOf(
                                         "userId" to participant.getUserId(),
                                         "status" to 1, // 0 cancel, 1 pending, 2 accept
+                                        "role" to 0, // Simple participant
                                     )
                                     // For each participant, add document in the created event with the presence status
                                     // AND add a document in the participant user event collection with the event data
@@ -254,6 +255,7 @@ class CreateEventActivity : AppCompatActivity() {
             Intent(applicationContext, EventActivity::class.java)
         intent.putExtra("eventId", iEventId)
         intent.putExtra("organizerId", iOrganizerId)
+        intent.putExtra("role", 0L)
         startActivity(intent)
     }
 
@@ -299,7 +301,7 @@ class CreateEventActivity : AppCompatActivity() {
                     adapter1 = recyclerView1.adapter as CreateEventParticipantListAdapter
                 for(doc in documents) {
                     if(null == doc) continue
-                    if(doc["status"] == 1L) continue
+                    if(doc["request"] == true) continue
                     val userId = doc.getString("userId").toString()
                     var bIsPresent = false
                     if(null != adapter1)

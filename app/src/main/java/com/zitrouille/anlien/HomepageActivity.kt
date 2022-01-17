@@ -359,6 +359,7 @@ class HomepageActivity : AppCompatActivity() {
                                         Intent(applicationContext, EventActivity::class.java)
                                     intent.putExtra("eventId", iEventId)
                                     intent.putExtra("organizerId", doc["organizerId"].toString())
+                                    intent.putExtra("role", 0L)
                                     startActivity(intent)
                                 }
                         } else {
@@ -388,7 +389,11 @@ class HomepageActivity : AppCompatActivity() {
                                                     intent.putExtra("eventId", iEventId)
                                                     intent.putExtra(
                                                         "organizerId",
-                                                        doc["organizerId"].toString()
+                                                        doc["organizerId"].toString(),
+                                                    )
+                                                    intent.putExtra(
+                                                        "role",
+                                                        0L,
                                                     )
                                                     startActivity(intent)
                                                 }
@@ -739,6 +744,7 @@ class HomepageActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.display_calendar).setOnClickListener {
                 mDisplayCalendar = !mDisplayCalendar
                 if(mDisplayCalendar) {
+                    findViewById<ImageView>(R.id.display_history).visibility = View.INVISIBLE
                     findViewById<ImageView>(R.id.display_calendar).clearColorFilter()
                     findViewById<ImageView>(R.id.display_calendar).setColorFilter(R.attr.colorSecondary)
                     val calendar = findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView)
@@ -747,6 +753,7 @@ class HomepageActivity : AppCompatActivity() {
                     calendars.add(appCalendar)
                     calendar.selectedDates = calendars
                     calendar.visibility = View.VISIBLE
+                    findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.GONE
                     calendar.animate().alpha(1.0f).start()
 
                     calendar.setOnDayClickListener(object : OnDayClickListener {
@@ -765,9 +772,12 @@ class HomepageActivity : AppCompatActivity() {
                     })
                 }
                 else {
+                    findViewById<ImageView>(R.id.display_history).visibility = View.VISIBLE
                     findViewById<ImageView>(R.id.display_calendar).clearColorFilter()
                     findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView).animate().alpha(0.0f).withEndAction {
                         findViewById<com.applandeo.materialcalendarview.CalendarView>(R.id.calendarView).visibility = View.GONE
+                        if(mEventArrayList!!.size == 0)
+                            findViewById<ConstraintLayout>(R.id.eventListEmpty).visibility = View.VISIBLE
                     }
                 }
                 retrieveEventList()
@@ -1102,7 +1112,8 @@ class HomepageActivity : AppCompatActivity() {
                      */
                     if(!document.exists()) {
                         // Current document is the last one of the list, fill list with retrieve users
-                        if(document == documents.documents[documents.size()-1]) {
+                        if(mFriendArrayList!!.size == documents.size()) {
+                            mFriendArrayList!!.sortBy { it.getIdentifiant() }
                             mActivityMainBinding!!.friendList.adapter = HomepageFriendListAdapter(this, mFriendArrayList!!)
                             mfriendListReceptionRunning = false
                         }
@@ -1136,7 +1147,7 @@ class HomepageActivity : AppCompatActivity() {
                         )
 
                         // Current document is the last one of the list, fill list with retrieve users
-                        if (document == documents.documents[documents.size() - 1]) {
+                        if(mFriendArrayList!!.size == documents.size()) {
                             mFriendArrayList!!.sortBy { it.getIdentifiant() }
                             mActivityMainBinding!!.friendList.adapter =
                                 HomepageFriendListAdapter(this, mFriendArrayList!!)
@@ -1189,7 +1200,7 @@ class HomepageActivity : AppCompatActivity() {
                                     )
 
                                     // Current document is the last one of the list, fill list with retrieve users
-                                    if (document == documents.documents[documents.size() - 1]) {
+                                    if(mFriendArrayList!!.size == documents.size()) {
                                         mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                         mActivityMainBinding!!.friendList.adapter =
                                             HomepageFriendListAdapter(this, mFriendArrayList!!)
@@ -1215,7 +1226,7 @@ class HomepageActivity : AppCompatActivity() {
                                     )
 
                                     // Current document is the last one of the list, fill list with retrieve users
-                                    if (document == documents.documents[documents.size() - 1]) {
+                                    if(mFriendArrayList!!.size == documents.size()) {
                                         mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                         mActivityMainBinding!!.friendList.adapter =
                                             HomepageFriendListAdapter(this, mFriendArrayList!!)
@@ -1225,7 +1236,7 @@ class HomepageActivity : AppCompatActivity() {
 
                             }.addOnFailureListener {
                                 // Current document is the last one of the list, fill list with retrieve users
-                                if (document == documents.documents[documents.size() - 1]) {
+                                if(mFriendArrayList!!.size == documents.size()) {
                                     mFriendArrayList!!.sortBy { it.getIdentifiant() }
                                     mActivityMainBinding!!.friendList.adapter =
                                         HomepageFriendListAdapter(this, mFriendArrayList!!)

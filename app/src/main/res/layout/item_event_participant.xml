@@ -80,12 +80,24 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:id="@+id/valid"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:id="@+id/sub_organizer"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
             android:layout_marginEnd="10dp"
-            android:src="@drawable/checked"
             android:visibility="gone"
+            android:contentDescription="@string/image_description"
+            android:src="@drawable/couronne_dot"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/valid"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/valid"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="10dp"
+            android:visibility="invisible"
+            android:src="@drawable/checked"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/delete"
             app:layout_constraintTop_toTopOf="parent"
@@ -93,8 +105,8 @@
 
         <ImageView
             android:id="@+id/question"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="10dp"
             android:src="@drawable/question"
             android:visibility="gone"
@@ -105,8 +117,8 @@
 
         <ImageView
             android:id="@+id/cancel"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="10dp"
             android:src="@drawable/cancel"
             android:visibility="gone"
@@ -117,8 +129,8 @@
 
         <ImageView
             android:id="@+id/delete"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:alpha="0.7"
             android:src="@drawable/ic_delete"
             android:visibility="gone"

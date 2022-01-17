@@ -21,6 +21,7 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
      */
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val remainingProfileTextView: TextView = view.findViewById(R.id.remaining_profile)
+        val remainingProfileLightTextView: TextView = view.findViewById(R.id.remaining_profile_light)
         val profilePictureImageView: ImageView = view.findViewById(R.id.profile_picture)
         val badge: ImageView = view.findViewById(R.id.badge)
         val profilePictureLightImageView: ImageView = view.findViewById(R.id.profile_picture_light)
@@ -55,7 +56,10 @@ class HomepageEventProfileListAdapter(private val dataSet: ArrayList<HomepageEve
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         if(0 != dataSet[position].getRemainingProfile()) {
-            viewHolder.remainingProfileTextView.text = "+ " + dataSet[position].getRemainingProfile().toString()
+            if(bLightVisu)
+                viewHolder.remainingProfileLightTextView.text = "+ " + dataSet[position].getRemainingProfile().toString()
+            else
+                viewHolder.remainingProfileTextView.text = "+ " + dataSet[position].getRemainingProfile().toString()
             viewHolder.profilePictureImageView.visibility = View.GONE
             viewHolder.profilePictureLightImageView.visibility = View.GONE
         }

@@ -44,11 +44,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import android.widget.LinearLayout
+import androidx.core.widget.addTextChangedListener
 import com.zitrouille.anlien.MainActivity.Companion.applicationCurrentUserId
+import org.w3c.dom.Text
 
 class EventActivity : AppCompatActivity() {
 
     private var mEventId: String = ""
+    private var mRole: Long = 0L
 
     private var mPresence: Boolean = false
     private var mStatus: Number = 1
@@ -72,6 +75,15 @@ class EventActivity : AppCompatActivity() {
     private var mMessageListener: ListenerRegistration? = null
     private var mMessageArrayList: ArrayList<EventChatMessage>? = null
 
+    private var bDisplayInfo = false
+    private var bDisplayParticipant = false
+    private var bDisplayShop = false
+    private var bDisplayPot = false
+
+    private var bUpdateIsNeeded = false
+
+    private var bInformationRetrieved = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_event)
@@ -79,9 +91,13 @@ class EventActivity : AppCompatActivity() {
         mCurrentUserId = FirebaseAuth.getInstance().currentUser!!.uid
         mDatabase = FirebaseFirestore.getInstance()
         mEventId = intent.extras!!["eventId"].toString()
+        mRole = intent.extras!!["role"] as Long
 
         if(mCurrentUserId == intent.extras!!["organizerId"].toString()) {
             mPresence = true
+            bOrganizer = true
+        }
+        if(1L == mRole) {
             bOrganizer = true
         }
 
@@ -96,9 +112,30 @@ class EventActivity : AppCompatActivity() {
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(findViewById<EditText>(R.id.message_input).windowToken, 0)
 
-                val bottomMenu = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-                val informationView: View = bottomMenu.findViewById(R.id.nav_info)
-                informationView.performClick()
+                val firstPageDisplayed = intent.extras!!["page"].toString()
+                if("chat" == firstPageDisplayed) {
+                    finish()
+                }
+                else {
+                    val bottomMenu = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+
+                    if(bDisplayInfo) {
+                        val informationView: View = bottomMenu.findViewById(R.id.nav_info)
+                        informationView.performClick()
+                    }
+                    else if(bDisplayParticipant) {
+                        val participantView: View = bottomMenu.findViewById(R.id.nav_participant)
+                        participantView.performClick()
+                    }
+                    else if(bDisplayShop) {
+                        val shopView: View = bottomMenu.findViewById(R.id.nav_shopping)
+                        shopView.performClick()
+                    }
+                    else {
+                        val potView: View = bottomMenu.findViewById(R.id.nav_pot)
+                        potView.performClick()
+                    }
+                }
             }
             else {
                 finish()
@@ -118,7 +155,6 @@ class EventActivity : AppCompatActivity() {
                     if(0L == mStatus) {
                         mPresence = true
                     }
-                    initializeBottomNavigation()
                 }
             }
         initializeBottomNavigation()
@@ -312,8 +348,20 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun displayInformationPage() {
+
+        bDisplayInfo = true
+        bDisplayShop = false
+        bDisplayParticipant = false
+        bDisplayPot = false
+
         val addButton = findViewById<ImageView>(R.id.add_button)
         addButton.visibility = View.GONE
+
+        val lockButton = findViewById<ImageView>(R.id.lock_button)
+        lockButton.visibility = View.VISIBLE
+
+        val deleteButton = findViewById<ImageView>(R.id.delete_button)
+        deleteButton.visibility = View.VISIBLE
 
         val manageButton = findViewById<ImageView>(R.id.manage_participant)
         manageButton.visibility = View.GONE
@@ -444,8 +492,20 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun displayParticipantPage() {
+
+        bDisplayInfo = false
+        bDisplayShop = false
+        bDisplayParticipant = true
+        bDisplayPot = false
+
         val addButton = findViewById<ImageView>(R.id.add_button)
         addButton.visibility = View.GONE
+
+        val lockButton = findViewById<ImageView>(R.id.lock_button)
+        lockButton.visibility = View.GONE
+
+        val deleteButton = findViewById<ImageView>(R.id.delete_button)
+        deleteButton.visibility = View.GONE
 
         if(bOrganizer) {
             val manageButton = findViewById<ImageView>(R.id.manage_participant)
@@ -479,8 +539,20 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun displayShoppingPage() {
+
+        bDisplayInfo = false
+        bDisplayShop = true
+        bDisplayParticipant = false
+        bDisplayPot = false
+
         val addButton = findViewById<ImageView>(R.id.add_button)
         addButton.visibility = View.VISIBLE
+
+        val lockButton = findViewById<ImageView>(R.id.lock_button)
+        lockButton.visibility = View.GONE
+
+        val deleteButton = findViewById<ImageView>(R.id.delete_button)
+        deleteButton.visibility = View.GONE
 
         val manageButton = findViewById<ImageView>(R.id.manage_participant)
         manageButton.visibility = View.GONE
@@ -509,8 +581,20 @@ class EventActivity : AppCompatActivity() {
     }
 
     private fun displayPotPage() {
+
+        bDisplayInfo = false
+        bDisplayShop = false
+        bDisplayParticipant = false
+        bDisplayPot = true
+
         val addButton = findViewById<ImageView>(R.id.add_button)
         addButton.visibility = View.GONE
+
+        val lockButton = findViewById<ImageView>(R.id.lock_button)
+        lockButton.visibility = View.GONE
+
+        val deleteButton = findViewById<ImageView>(R.id.delete_button)
+        deleteButton.visibility = View.GONE
 
         val manageButton = findViewById<ImageView>(R.id.manage_participant)
         manageButton.visibility = View.GONE
@@ -542,6 +626,12 @@ class EventActivity : AppCompatActivity() {
     private fun displayChatPage() {
         val addButton = findViewById<ImageView>(R.id.add_button)
         addButton.visibility = View.GONE
+
+        val lockButton = findViewById<ImageView>(R.id.lock_button)
+        lockButton.visibility = View.GONE
+
+        val deleteButton = findViewById<ImageView>(R.id.delete_button)
+        deleteButton.visibility = View.GONE
 
         val manageButton = findViewById<ImageView>(R.id.manage_participant)
         manageButton.visibility = View.GONE
@@ -575,6 +665,7 @@ class EventActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n", "CutPasteId", "SimpleDateFormat")
     private fun retrieveEventInformation() {
+        bInformationRetrieved = true
         FirebaseFirestore.getInstance()
             .collection("events")
             .document(mEventId).get().addOnSuccessListener { doc ->
@@ -601,22 +692,70 @@ class EventActivity : AppCompatActivity() {
                         }
 
                     mEventTitle = doc["title"].toString()
-                    findViewById<EditText>(R.id.title).setText(mEventTitle)
+
+                    val updateButton = findViewById<TextView>(R.id.update_event_button)
+
+                    val title = findViewById<EditText>(R.id.title)
+                    title.setText(mEventTitle)
+                    // Add listener to the title for update
+                    title.addTextChangedListener {
+                        if(!bInformationRetrieved) {
+                            title.setBackgroundResource(R.drawable.round_corner_small_warning)
+                            bUpdateIsNeeded = true
+                            updateButton.visibility = View.VISIBLE
+                        }
+                    }
+
                     val newDate: Date = Calendar.getInstance().time //getting date
                     val formatter = SimpleDateFormat("EEEE d MMMM yyyy") //formating according to my need
                     mStartDateInMillis = doc.getLong("date")!!
                     mCurrentDateInMillis = mStartDateInMillis
                     newDate.time = mCurrentDateInMillis
-                    findViewById<TextView>(R.id.date).text  = formatter.format(newDate).toString().substring(0, 1)
+                    val date = findViewById<TextView>(R.id.date)
+                    date.text  = formatter.format(newDate).toString().substring(0, 1)
                         .uppercase(Locale.getDefault()) + formatter.format(newDate).toString().substring(1)
                         .lowercase(Locale.getDefault())
-                    findViewById<TextView>(R.id.hour).text = doc["hour"].toString()
+                    // Add listener to the date for update
+                    date.addTextChangedListener {
+                        if(!bInformationRetrieved) {
+                            date.setBackgroundResource(R.drawable.round_corner_small_warning)
+                            bUpdateIsNeeded = true
+                            updateButton.visibility = View.VISIBLE
+                        }
+                    }
+
+                    val hour = findViewById<TextView>(R.id.hour)
+                    hour.text = doc["hour"].toString()
+                    // Add listener to the hour for update
+                    hour.addTextChangedListener {
+                        if(!bInformationRetrieved) {
+                            hour.setBackgroundResource(R.drawable.round_corner_small_warning)
+                            bUpdateIsNeeded = true
+                            updateButton.visibility = View.VISIBLE
+                        }
+                    }
 
                     mInitAddress = true
-                    findViewById<EditText>(R.id.address).setText(doc["address"].toString())
+                    val address = findViewById<EditText>(R.id.address)
+                    address.setText(doc["address"].toString())
+                    address.addTextChangedListener {
+                        if(!bInformationRetrieved) {
+                            address.setBackgroundResource(R.drawable.round_corner_small_warning)
+                            bUpdateIsNeeded = true
+                            updateButton.visibility = View.VISIBLE
+                        }
+                    }
                     mInitAddress = false
 
-                    findViewById<EditText>(R.id.description).setText(doc["description"].toString())
+                    val description = findViewById<EditText>(R.id.description)
+                    description.setText(doc["description"].toString())
+                    description.addTextChangedListener {
+                        if(!bInformationRetrieved) {
+                            description.setBackgroundResource(R.drawable.round_corner_small_warning)
+                            bUpdateIsNeeded = true
+                            updateButton.visibility = View.VISIBLE
+                        }
+                    }
 
                     if(!bOrganizer) {
                         findViewById<EditText>(R.id.title).isFocusableInTouchMode = false
@@ -624,16 +763,15 @@ class EventActivity : AppCompatActivity() {
                         findViewById<EditText>(R.id.description).isFocusableInTouchMode = false
 
                         findViewById<ConstraintLayout>(R.id.user_menu).visibility = View.VISIBLE
-                        findViewById<ConstraintLayout>(R.id.organizer_menu).visibility = View.GONE
+                        bInformationRetrieved = false
                     }
                     else {
-                        findViewById<TextView>(R.id.textView3).text = getString(R.string.manage)
-
                         initDatePicker(findViewById(R.id.date))
                         initHourPicker(findViewById(R.id.hour))
 
-                        findViewById<ConstraintLayout>(R.id.user_menu).visibility = View.GONE
-                        findViewById<ConstraintLayout>(R.id.organizer_menu).visibility = View.VISIBLE
+                        if(0L == mRole) {
+                            findViewById<ConstraintLayout>(R.id.presenceLayout).visibility = View.GONE
+                        }
 
                         // Button callback for organizer
                         findViewById<ImageView>(R.id.delete_button).setOnClickListener {
@@ -644,38 +782,31 @@ class EventActivity : AppCompatActivity() {
 
                         mLock = doc["lock"] as Boolean
                         if(mLock) {
-                            findViewById<ImageView>(R.id.lock_unlock).setImageDrawable(
-                                ContextCompat.getDrawable(this, R.drawable.lock)
-                            )
+                            Glide.with(applicationContext).load(R.drawable.ic_lock).into(findViewById<ImageView>(R.id.lock_button))
                         }
                         else {
-                            findViewById<ImageView>(R.id.lock_unlock).setImageDrawable(
-                                ContextCompat.getDrawable(this, R.drawable.unlock)
-                            )
+                            Glide.with(applicationContext).load(R.drawable.ic_unlock).into(findViewById<ImageView>(R.id.lock_button))
                         }
-                        findViewById<ImageView>(R.id.lock_unlock).setOnClickListener {
+                        findViewById<ImageView>(R.id.lock_button).setOnClickListener {
                             mLock = !mLock
                             database.collection("events")
                                 .document(mEventId)
                                 .update("lock", mLock).addOnSuccessListener {
                                     if(mLock) {
-                                        findViewById<ImageView>(R.id.lock_unlock).setImageDrawable(
-                                            ContextCompat.getDrawable(this, R.drawable.lock)
-                                        )
+                                        Glide.with(applicationContext).load(R.drawable.ic_lock).into(findViewById<ImageView>(R.id.lock_button))
                                         Toast.makeText(applicationContext, getString(R.string.private_event), Toast.LENGTH_SHORT).show()
                                     }
                                     else {
-                                        findViewById<ImageView>(R.id.lock_unlock).setImageDrawable(
-                                            ContextCompat.getDrawable(this, R.drawable.unlock)
-                                        )
+                                        Glide.with(applicationContext).load(R.drawable.ic_unlock).into(findViewById<ImageView>(R.id.lock_button))
                                         Toast.makeText(applicationContext, getString(R.string.public_event), Toast.LENGTH_SHORT).show()
                                     }
                             }
 
                         }
-                        findViewById<ImageView>(R.id.update_button).setOnClickListener {
+                        updateButton.setOnClickListener {
                             updateEvent()
                         }
+                        bInformationRetrieved = false
                     }
                 }
         }
@@ -696,8 +827,14 @@ class EventActivity : AppCompatActivity() {
             "organizerId" to mCurrentUserId
         )
         database.collection("events").document(mEventId).set(currentEventData).addOnSuccessListener {
-            findViewById<ImageView>(R.id.update_button).animate().rotation(findViewById<ImageView>(R.id.update_button).rotation+360.0f).withEndAction {
+            findViewById<TextView>(R.id.update_event_button).animate().alpha(0f).withEndAction {
+                findViewById<TextView>(R.id.update_event_button).visibility = View.GONE
                 Toast.makeText(applicationContext, getString(R.string.event_update_success), Toast.LENGTH_SHORT).show()
+                findViewById<EditText>(R.id.title).setBackgroundResource(R.drawable.round_corner_small)
+                findViewById<TextView>(R.id.date).setBackgroundResource(R.drawable.round_corner_small)
+                findViewById<TextView>(R.id.hour).setBackgroundResource(R.drawable.round_corner_small)
+                findViewById<EditText>(R.id.address).setBackgroundResource(R.drawable.round_corner_small)
+                findViewById<EditText>(R.id.description).setBackgroundResource(R.drawable.round_corner_small)
             }
 
         database.collection("events")
@@ -1141,17 +1278,36 @@ class EventActivity : AppCompatActivity() {
 
         val participantList = ArrayList<EventParticipant>()
 
+        participantList.add(EventParticipant(
+            "",
+            intent.extras!!["organizerId"].toString(),
+            3L,
+            mEventId,
+            mEventTitle,
+            false,
+            0L,
+        ))
+
         FirebaseFirestore.getInstance()
             .collection("events")
             .document(mEventId)
             .collection("participants").get().addOnSuccessListener { documents ->
                 for(doc in documents) {
-                    if(null == doc) continue
+                    if(!doc.exists()) continue
+
+                    var role = 0L
+                    if(doc.contains("role")) {
+                        role = doc.getLong("role")!!
+                    }
+
                     participantList.add(EventParticipant(
+                        doc.id,
                         doc["userId"].toString(),
                         doc.getLong("status")!!,
                         mEventId,
+                        mEventTitle,
                         bOrganizer,
+                        role,
                     ))
                     if(doc == documents.documents[documents.size()-1]) {
                         recyclerView.adapter = EventParticipantListAdapter(participantList)
